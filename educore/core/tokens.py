@@ -17,6 +17,7 @@ from datetime import timedelta
 
 import jwt
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 ALGORITHM = "HS256"
@@ -109,32 +110,54 @@ def rotate_refresh(raw: str):
     Returns (membership, new_raw_refresh). Raises RefreshReuseDetectedError if the
     presented token was already consumed -- in which case the entire family is
     revoked before the exception leaves this function.
+
+    The read-check-write here is guarded with ``select_for_update`` inside an
+    atomic block: without it, two requests racing to rotate the *same* token
+    (an attacker replaying a stolen token at roughly the moment the victim's
+    client refreshes) can both pass the "not yet consumed" check before
+    either write lands, and reuse detection never fires for either caller --
+    the exact scenario this function exists to catch. The row lock forces the
+    second caller to wait for the first to finish and then see its outcome,
+    so exactly one of the two ever succeeds.
     """
     from .models import RefreshToken
 
-    token = RefreshToken.all_tenants.filter(token_hash=hash_refresh(raw)).first()
-    if token is None:
-        raise TokenInvalidError("refresh token is not recognised")
+    reused = False
+    with transaction.atomic():
+        token = (
+            RefreshToken.all_tenants.select_for_update()
+            .filter(token_hash=hash_refresh(raw))
+            .first()
+        )
+        if token is None:
+            raise TokenInvalidError("refresh token is not recognised")
 
-    if token.revoked_at is not None:
-        raise TokenInvalidError("refresh token has been revoked")
+        if token.revoked_at is not None:
+            raise TokenInvalidError("refresh token has been revoked")
 
-    if token.consumed_at is not None:
-        RefreshToken.all_tenants.filter(
-            family_id=token.family_id, revoked_at__isnull=True
-        ).update(revoked_at=timezone.now())
+        if token.consumed_at is not None:
+            reused = True
+            RefreshToken.all_tenants.filter(
+                family_id=token.family_id, revoked_at__isnull=True
+            ).update(revoked_at=timezone.now())
+        else:
+            if token.expires_at <= timezone.now():
+                raise TokenExpiredError("refresh token has expired")
+
+            token.consumed_at = timezone.now()
+            token.save(update_fields=["consumed_at", "updated_at"])
+
+            new_raw, _new = issue_refresh(token.membership,
+                                          family_id=token.family_id,
+                                          device=token.device)
+
+    # Raised outside the atomic block so the family-revocation write above is
+    # not rolled back by the exception propagating through this function.
+    if reused:
         raise RefreshReuseDetectedError(
             "refresh token replayed; the whole token family has been revoked"
         )
 
-    if token.expires_at <= timezone.now():
-        raise TokenExpiredError("refresh token has expired")
-
-    token.consumed_at = timezone.now()
-    token.save(update_fields=["consumed_at", "updated_at"])
-
-    new_raw, _new = issue_refresh(token.membership, family_id=token.family_id,
-                                  device=token.device)
     return token.membership, new_raw
 
 

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import threading
+
 import pytest
+from django.db import connections
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -130,6 +133,48 @@ def test_replaying_a_refresh_token_revokes_the_whole_family(api, teacher):
                         {"refresh_token": first.data["refresh_token"]},
                         format="json")
     assert followup.status_code == 401
+
+
+@pytest.mark.postgres
+@pytest.mark.django_db(transaction=True)
+def test_concurrent_replay_of_the_same_token_lets_exactly_one_through(api, teacher):
+    """Two requests racing to rotate the identical token -- an attacker and a
+    victim refreshing at nearly the same instant -- must not both succeed.
+
+    ``rotate_refresh`` reads then writes ``consumed_at``; without a row lock,
+    both racing calls can observe "not yet consumed" before either commits,
+    so reuse detection silently never fires for either caller. This needs
+    real concurrent DB connections (SQLite serialises writes globally and
+    can't exercise the row lock this defends), hence ``postgres`` + a real
+    transactional test.
+    """
+    pair = obtain(api, "teacher@example.com").data
+    raw = pair["refresh_token"]
+
+    results = []
+    lock = threading.Lock()
+    barrier = threading.Barrier(2)
+
+    def attempt():
+        connections.close_all()
+        barrier.wait()
+        try:
+            tokens.rotate_refresh(raw)
+            outcome = "success"
+        except tokens.RefreshReuseDetectedError:
+            outcome = "reuse_detected"
+        finally:
+            connections.close_all()
+        with lock:
+            results.append(outcome)
+
+    racers = [threading.Thread(target=attempt) for _ in range(2)]
+    for racer in racers:
+        racer.start()
+    for racer in racers:
+        racer.join()
+
+    assert sorted(results) == ["reuse_detected", "success"]
 
 
 def test_refresh_tokens_are_never_stored_in_the_clear(api, teacher):
