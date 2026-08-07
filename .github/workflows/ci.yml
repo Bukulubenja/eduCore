@@ -43,6 +43,12 @@ jobs:
       - name: Lint
         run: ruff check .
 
+      - name: Security scan
+        # Required by doc 06's "Secure development" table (SAST: bandit) but
+        # not previously enforced. Findings are addressed inline with a
+        # `# nosec <id>` and a reason, not by loosening this step.
+        run: bandit -r educore/
+
       - name: Module boundaries (ADR-0005)
         run: lint-imports
 

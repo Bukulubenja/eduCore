@@ -16,6 +16,8 @@ never leave the two silently diverged.
 | 04 | [Attendance & Verification](04-attendance-verification.md) | The evidence model — core differentiator |
 | 05 | [API Design](05-api-design.md) | Conventions, resources, offline sync protocol |
 | 06 | [Security & Compliance](06-security-compliance.md) | AuthN/Z, tenant isolation, data protection |
+| 06a | [DPIA](06a-dpia.md) | Data protection impact assessment: inventory, lawful basis, risk, gaps |
+| 06b | [Restore Drills](06b-restore-drills.md) | Backup/restore runbook and the current gap against doc 06's claims |
 | 07 | [Delivery Plan](07-delivery-plan.md) | Phases with exit criteria, team shape, risks |
 
 ## Architecture Decision Records

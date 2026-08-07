@@ -10,7 +10,7 @@ run down with it.
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404 (hardcoded argv only, see _run below)
 import sys
 import tempfile
 from pathlib import Path
@@ -23,9 +23,9 @@ MANAGE_PY = Path(settings.BASE_DIR) / "manage.py"
 
 class Command(BaseCommand):
     help = (
-        "Run the pre-PR verification pipeline: lint, module boundaries, "
-        "migrations, API schema drift, tests+coverage, tenant isolation "
-        "battery, deploy checks, audit chain integrity."
+        "Run the pre-PR verification pipeline: lint, security scan, module "
+        "boundaries, migrations, API schema drift, tests+coverage, tenant "
+        "isolation battery, deploy checks, audit chain integrity."
     )
 
     def add_arguments(self, parser):
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             default=[],
             metavar="PHASE",
             choices=[
-                "lint", "boundaries", "migrations", "schema",
+                "lint", "security", "boundaries", "migrations", "schema",
                 "tests", "isolation", "deploy-check", "audit-chain",
             ],
             help="Skip a phase by name (repeatable).",
@@ -45,6 +45,7 @@ class Command(BaseCommand):
         skip = set(options["skip"])
         phases = [
             ("lint", self._lint),
+            ("security", self._security),
             ("boundaries", self._boundaries),
             ("migrations", self._migrations),
             ("schema", self._schema),
@@ -76,13 +77,19 @@ class Command(BaseCommand):
 
     def _run(self, cmd: list[str], env: dict[str, str] | None = None) -> bool:
         # cmd is always one of this file's own hardcoded literals below, never
-        # user input, so the dynamic-argument shape S603 flags is a false
+        # user input, so the dynamic-argument shape S603/B603 flags is a false
         # positive here.
-        result = subprocess.run(cmd, cwd=settings.BASE_DIR, env=env)  # noqa: S603
+        result = subprocess.run(cmd, cwd=settings.BASE_DIR, env=env)  # noqa: S603 # nosec B603
         return result.returncode == 0
 
     def _lint(self) -> bool:
         return self._run([sys.executable, "-m", "ruff", "check", "."])
+
+    def _security(self) -> bool:
+        # Doc 06's "Secure development" table: SAST via bandit, on every PR.
+        # Findings get fixed or suppressed inline with `# nosec <id>` and a
+        # reason -- this phase is not meant to stay green by attrition.
+        return self._run([sys.executable, "-m", "bandit", "-r", "educore/"])
 
     def _boundaries(self) -> bool:
         # Console script lives next to the interpreter in the active venv
@@ -129,7 +136,8 @@ class Command(BaseCommand):
             ))
             return True
 
-        result = subprocess.run(
+        # Hardcoded argv, never user input.
+        result = subprocess.run(  # nosec B603
             [sys.executable, "-m", "pytest", "-m", "postgres", "--no-header", "-q"],
             cwd=settings.BASE_DIR,
             capture_output=True,
