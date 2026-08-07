@@ -17,6 +17,7 @@ never leave the two silently diverged.
 | 05 | [API Design](05-api-design.md) | Conventions, resources, offline sync protocol |
 | 06 | [Security & Compliance](06-security-compliance.md) | AuthN/Z, tenant isolation, data protection |
 | 07 | [Delivery Plan](07-delivery-plan.md) | Phases with exit criteria, team shape, risks |
+| — | [Partitioning Plan](partitioning-plan.md) | Phase 4 hot-table partitioning: design, blocked-on, rollout steps |
 
 ## Architecture Decision Records
 

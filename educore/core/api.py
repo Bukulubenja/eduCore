@@ -25,9 +25,12 @@ _TYPE_BY_STATUS = {
 class CursorPagination(pagination.CursorPagination):
     """Cursor paging only.
 
-    Offset paging degrades sharply on the partitioned attendance tables and
-    produces duplicates and gaps while rows are being inserted -- which, for
-    attendance, is continuously.
+    Offset paging degrades sharply on high-volume, high-insert-rate tables
+    such as attendance -- it produces duplicates and gaps while rows are
+    being inserted, which for attendance is continuously. Partitioning those
+    tables (docs/07-delivery-plan.md Phase 4, docs/partitioning-plan.md) will
+    make deep offset pages even worse, not better, so cursor-only pagination
+    is chosen ahead of that rollout, not because of it.
     """
 
     page_size = 50

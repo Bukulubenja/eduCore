@@ -154,6 +154,75 @@ def append_only(*tables: str) -> migrations.RunPython:
     return migrations.RunPython(_apply, _revert)
 
 
+def partition_by_range(
+    table: str, column: str, *, using: str = "RANGE"
+) -> migrations.RunPython:
+    """Retrofit an existing table onto native declarative partitioning.
+
+    PostgreSQL cannot run ``ALTER TABLE ... PARTITION BY`` on a table that
+    already exists -- partitioning strategy is fixed at ``CREATE TABLE`` and
+    there is no in-place conversion. The safe retrofit for a table that may
+    already hold rows is the rename-and-attach pattern used here:
+
+    1. Rename the live table aside.
+    2. Create a new table under the original name, with the same columns,
+       indexes, constraints and defaults (``LIKE ... INCLUDING ALL``),
+       declared ``PARTITION BY {using} (column)``.
+    3. Attach the renamed table as that partitioned table's DEFAULT
+       partition.
+
+    Every step is a metadata-only operation -- no row is read or copied, so
+    this is safe to run against a table with millions of existing rows and
+    does not hold an exclusive lock for longer than a few catalogue updates.
+    The existing rows keep living in the DEFAULT partition until a caller
+    creates dated partitions and moves rows into them; that migration is
+    deliberately not this function's job.
+
+    Precondition the caller MUST satisfy first, or PostgreSQL rejects the
+    ``CREATE TABLE ... LIKE ... INCLUDING ALL`` step: every PRIMARY KEY and
+    UNIQUE constraint already on ``table`` must include ``column``. Native
+    partitioning requires the partition key to be part of every unique
+    index on the table, so a bare ``id`` primary key, or a ``(school_id,
+    id)`` composite-FK-target constraint that does not carry ``column``,
+    will fail here. Widen those constraints in an earlier migration before
+    calling this one -- and audit anything with a plain foreign key
+    pointing at ``table`` (e.g. ``composite_fks()`` targets, or a Django
+    ``ForeignKey`` to it), since narrowing the parent's unique constraint to
+    a composite one invalidates any FK that references the old single-column
+    key.
+
+    SQLite has no partitioning of any kind; this is a no-op there, exactly
+    like ``append_only()`` and the other helpers in this module -- the
+    workstation suite exercises the no-op path, and production (Postgres
+    only, see config/settings/production.py) exercises the real one.
+    """
+    legacy_suffix = "__unpartitioned"
+
+    def _apply(apps, schema_editor):
+        if schema_editor.connection.vendor != "postgresql":
+            return
+        legacy = f"{table}{legacy_suffix}"
+        schema_editor.execute(f"""
+            ALTER TABLE {table} RENAME TO {legacy};
+            CREATE TABLE {table}
+                (LIKE {legacy} INCLUDING ALL)
+                PARTITION BY {using} ({column});
+            ALTER TABLE {table} ATTACH PARTITION {legacy} DEFAULT;
+        """)
+
+    def _revert(apps, schema_editor):
+        if schema_editor.connection.vendor != "postgresql":
+            return
+        legacy = f"{table}{legacy_suffix}"
+        schema_editor.execute(f"""
+            ALTER TABLE {table} DETACH PARTITION {legacy};
+            DROP TABLE {table};
+            ALTER TABLE {legacy} RENAME TO {table};
+        """)
+
+    return migrations.RunPython(_apply, _revert)
+
+
 def set_tenant(connection, school_id) -> None:
     """Bind the tenant to the current transaction.
 

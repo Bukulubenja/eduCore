@@ -22,8 +22,12 @@ service functions or the outbox instead.
 - `django-verification` — pre-merge check: migrations, lint, tests+coverage,
   security scan (mirrors the `## Checks` section in README.md)
 
-**Data layer** — this project runs Postgres 16 with row-level security and
-range-partitioned hot tables (`attendance_event`, `audit_event`, etc.):
+**Data layer** — this project runs Postgres 16 with row-level security.
+Range-partitioning of hot tables (`attendance_event`, `audit_event`, etc.) is
+planned (Phase 4, [`docs/07-delivery-plan.md`](docs/07-delivery-plan.md)) but
+**not yet implemented** — see [`docs/partitioning-plan.md`](docs/partitioning-plan.md)
+for the retrofit design, the schema obstacle that blocks applying it today,
+and the `educore.core.db.partition_by_range()` helper built for it:
 - `postgres-patterns` — schema/query design, RLS, partitioning
 - `database-migrations` — expand/migrate/contract, lock-safe migrations
 
