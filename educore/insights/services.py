@@ -260,13 +260,18 @@ def at_risk_students(*, term, since=None, until=None, limit: int = 100) -> list[
     return flagged[:limit]
 
 
-def coverage_overview(*, term) -> dict:
-    """How the school is doing against its own schemes of work."""
+def coverage_overview(*, term, department_id=None) -> dict:
+    """How the school -- or one department -- is doing against its schemes.
+
+    `department_id` narrows this to one department's courses: a head of
+    department's dashboard, not the DOS's school-wide one.
+    """
     from educore.delivery.services import schemes_behind
 
-    behind = schemes_behind(term=term)
+    behind = schemes_behind(term=term, department_id=department_id)
     return {
         "term_id": str(term.pk),
+        "department_id": str(department_id) if department_id else None,
         "groups_behind": len(behind),
         "worst": [
             {"scheme_id": str(r.scheme_id),

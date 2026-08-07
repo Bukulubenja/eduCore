@@ -1020,6 +1020,7 @@ paths:
   /api/v1/insights/coverage:
     get:
       operationId: insights_coverage_retrieve
+      description: Leadership's school-wide lead, or one HOD's department view.
       tags:
       - insights
       security:

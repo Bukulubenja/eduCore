@@ -340,15 +340,20 @@ def coverage_report(*, scheme: SchemeOfWork, class_group=None,
     )
 
 
-def schemes_behind(*, term, as_of=None) -> list[CoverageReport]:
+def schemes_behind(*, term, as_of=None, department_id=None) -> list[CoverageReport]:
     """Every class group falling behind, worst first. The DOS dashboard's lead.
 
     Reported per group rather than per scheme, because "Physics S4 is behind"
     is not actionable when only one of its three streams actually is.
+
+    `department_id`, when given, restricts this to courses whose subject
+    belongs to that department -- the HOD dashboard's lead, not the DOS's.
     """
     reports: list[CoverageReport] = []
-    for scheme in (SchemeOfWork.objects.filter(term=term)
-                   .select_related("course", "term")):
+    schemes = SchemeOfWork.objects.filter(term=term).select_related("course", "term")
+    if department_id is not None:
+        schemes = schemes.filter(course__subject__department_id=department_id)
+    for scheme in schemes:
         group_ids = (
             LessonInstance.objects
             .filter(course_id=scheme.course_id, date__gte=term.starts_on,

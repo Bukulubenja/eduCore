@@ -1,0 +1,160 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { ApiError, api } from "@/lib/api";
+import { Empty, Panel } from "@/components/ui";
+
+type Report = {
+  scheme_id: string;
+  class_group_id: string | null;
+  coverage: number;
+  expected: number;
+  pace: number;
+  is_behind: boolean;
+  periods_elapsed: number;
+  total_periods: number;
+  units_completed: number;
+  units_total: number;
+};
+
+type CoverageResponse = {
+  department_id: string | null;
+  results: Report[];
+};
+
+const percent = (value: number) => `${Math.round(value * 100)}%`;
+
+/**
+ * Coverage against expectation, on one track.
+ *
+ * Same shape as the DOS coverage page: the bar shows what has been taught,
+ * the marker shows where the class should be by now, and the gap between
+ * them is the only thing worth reading.
+ */
+function PaceTrack({ report }: { report: Report }) {
+  return (
+    <div className="relative h-2.5 rounded-full bg-paper">
+      <div
+        className={`h-full rounded-full ${
+          report.is_behind ? "bg-provisional" : "bg-verified"
+        }`}
+        style={{ width: `${Math.min(100, report.coverage * 100)}%` }}
+      />
+      <span
+        aria-hidden
+        className="absolute top-1/2 h-4 w-0.5 -translate-y-1/2 bg-ink"
+        style={{ left: `${Math.min(100, report.expected * 100)}%` }}
+        title="Where this class should be by now"
+      />
+    </div>
+  );
+}
+
+/**
+ * A head of department's own pace, not the school's.
+ *
+ * The backend infers the department from the caller's staff profile and
+ * refuses to widen the view -- this page never sends a `department_id`, so
+ * whatever comes back is already the caller's own department's coverage.
+ */
+export default function HodCoveragePage() {
+  const [reports, setReports] = useState<Report[] | null>(null);
+  const [error, setError] = useState("");
+  const [notAssigned, setNotAssigned] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<CoverageResponse>("/coverage")
+      .then((body) => setReports(body.results))
+      .catch((err) => {
+        if (err instanceof ApiError && err.type.endsWith("/no-department")) {
+          setNotAssigned(true);
+          return;
+        }
+        setError(err.message);
+      });
+  }, []);
+
+  if (notAssigned) {
+    return (
+      <Empty>
+        You are not assigned to a department yet. Ask a director of studies to
+        set it on your staff profile before this view has anything to show.
+      </Empty>
+    );
+  }
+
+  if (error) {
+    return (
+      <p
+        role="alert"
+        className="rounded-md bg-rejected-soft px-4 py-3 text-sm text-rejected"
+      >
+        {error}
+      </p>
+    );
+  }
+
+  if (!reports) {
+    return <p className="text-sm text-mist">Loading coverage…</p>;
+  }
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <p className="eyebrow">Department</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          Your department&rsquo;s pace
+        </h1>
+        <p className="mt-3 max-w-xl text-sm text-slate">
+          Every class taking one of your department&rsquo;s courses, measured
+          in lesson periods that actually happened -- not the whole school,
+          just what you can act on.
+        </p>
+      </header>
+
+      <Panel
+        title="Behind the plan"
+        hint="Worst first. The marker shows where each class should be by now"
+      >
+        {reports.length === 0 ? (
+          <Empty>
+            No class in your department is behind its scheme of work. Nothing
+            to act on here.
+          </Empty>
+        ) : (
+          <ul className="space-y-6">
+            {reports.map((report) => (
+              <li key={`${report.scheme_id}-${report.class_group_id}`}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium">
+                    {report.units_completed} of {report.units_total} topics
+                    finished
+                  </p>
+                  <p className="measured text-sm text-provisional">
+                    {percent(report.pace)} behind
+                  </p>
+                </div>
+
+                <div className="mt-2.5">
+                  <PaceTrack report={report} />
+                </div>
+
+                <p className="mt-2 text-xs text-slate">
+                  <span className="measured">{percent(report.coverage)}</span>{" "}
+                  covered against{" "}
+                  <span className="measured">{percent(report.expected)}</span>{" "}
+                  expected after{" "}
+                  <span className="measured">{report.periods_elapsed}</span> of{" "}
+                  <span className="measured">{report.total_periods}</span>{" "}
+                  planned periods
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
+  );
+}
