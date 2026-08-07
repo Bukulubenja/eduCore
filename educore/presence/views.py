@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from django.db import IntegrityError
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -23,11 +24,15 @@ from .serializers import (
     DecisionSerializer,
     EventSerializer,
     ExceptionSerializer,
+    PolicySerializer,
     RecordSerializer,
     SyncSerializer,
 )
 
 REVIEW_ROLES = {"director", "head_teacher", "deputy", "dos", "hod", "ict_admin"}
+# Narrower than REVIEW_ROLES: a deputy can decide appeals but should not be
+# able to move the thresholds that decide everyone's disposition.
+POLICY_ROLES = {"director", "head_teacher", "dos"}
 
 
 def _membership(request) -> Membership:
@@ -38,12 +43,14 @@ def _membership(request) -> Membership:
     return membership
 
 
-def _may_review(membership) -> bool:
+def _roles(membership) -> set[str]:
     today = timezone.localdate()
-    return any(
-        ra.role.code in REVIEW_ROLES and ra.is_valid_on(today)
-        for ra in membership.role_assignments.select_related("role")
-    )
+    return {ra.role.code for ra in membership.role_assignments.select_related("role")
+            if ra.is_valid_on(today)}
+
+
+def _may_review(membership) -> bool:
+    return bool(_roles(membership) & REVIEW_ROLES)
 
 
 class CheckInView(APIView):
@@ -277,6 +284,50 @@ class HealthMetricsView(APIView):
         until = timezone.localdate()
         since = until - timedelta(days=int(request.query_params.get("days", 30)))
         return Response(services.health_metrics(since=since, until=until))
+
+
+class PolicyView(APIView):
+    """The school's attendance-confidence thresholds (doc 07 phase 1).
+
+    A policy is never edited in place (see `AttendancePolicy` and
+    `services.revise_policy`), so `POST` here always produces a new version
+    rather than mutating the one every existing record cites.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=PolicySerializer)
+    def get(self, request):
+        membership = _membership(request)
+        policy = services.active_policy(membership.school_id)
+        return Response(PolicySerializer(policy).data)
+
+    @extend_schema(request=PolicySerializer, responses=PolicySerializer)
+    def post(self, request):
+        membership = _membership(request)
+        if not (_roles(membership) & POLICY_ROLES):
+            raise ProblemError("You may not change the attendance policy.",
+                               "not-permitted", status.HTTP_403_FORBIDDEN)
+
+        payload = PolicySerializer(data=request.data, partial=True)
+        payload.is_valid(raise_exception=True)
+        changes = payload.validated_data
+        if not changes:
+            raise ProblemError("No changes were supplied.", "no-changes",
+                               status.HTTP_400_BAD_REQUEST)
+
+        try:
+            revised = services.revise_policy(**changes)
+        except IntegrityError as exc:
+            raise ProblemError(
+                "accept_threshold must be greater than review_threshold.",
+                "invalid-policy-thresholds",
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+            ) from exc
+
+        return Response(PolicySerializer(revised).data)
+
+    put = post
 
 
 class SyncView(APIView):
