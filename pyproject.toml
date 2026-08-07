@@ -1,0 +1,97 @@
+[project]
+name = "educore"
+version = "0.1.0"
+description = "School operations and accountability platform"
+requires-python = ">=3.12"
+
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "--strict-markers --reuse-db"
+markers = [
+    "postgres: requires PostgreSQL (row-level security, composite FKs, triggers)",
+]
+
+[tool.coverage.run]
+source = ["educore"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "raise NotImplementedError"]
+
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 96
+target-version = "py312"
+exclude = ["migrations", ".venv", "console"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "DJ", "S", "RUF"]
+ignore = [
+    "S101",   # assert: the test suite is built on it
+    "RUF012", # Django class attributes are not ClassVar-annotated by convention
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]
+# Settings modules re-export via star import by design, and the test settings
+# module holds a deliberately fake secret key.
+"config/settings/*" = ["F403", "F405", "S105"]
+
+# ---------------------------------------------------------------------------
+# Module boundaries (ADR-0005). A violation fails the build; that enforcement
+# is the only thing keeping "modular monolith" from decaying into "monolith".
+
+[tool.importlinter]
+root_packages = ["educore"]
+
+[[tool.importlinter.contracts]]
+name = "Domain modules are layered"
+type = "layers"
+layers = [
+    "educore.platform",
+    "educore.insights",
+    "educore.assessment | educore.delivery | educore.presence",
+    # `students` sits below the trio above, not alongside it. Who is in the
+    # school is foundational: scores, registers and report cards all reference
+    # a Student, while nothing in `students` needs to know that assessment
+    # exists. Modelling them as independent siblings was wrong.
+    "educore.students",
+    "educore.timetable",
+    "educore.academics",
+    "educore.core",
+]
+
+[[tool.importlinter.contracts]]
+name = "comms is a leaf: it consumes events and is imported by nobody"
+type = "forbidden"
+source_modules = [
+    "educore.academics",
+    "educore.timetable",
+    "educore.presence",
+    "educore.delivery",
+    "educore.students",
+    "educore.assessment",
+    "educore.insights",
+]
+forbidden_modules = ["educore.comms"]
+
+[[tool.importlinter.contracts]]
+name = "core depends on no domain module"
+type = "forbidden"
+source_modules = ["educore.core"]
+forbidden_modules = [
+    "educore.academics",
+    "educore.timetable",
+    "educore.presence",
+    "educore.delivery",
+    "educore.students",
+    "educore.assessment",
+    "educore.comms",
+    "educore.insights",
+    "educore.platform",
+]

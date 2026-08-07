@@ -1,0 +1,33 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+.env
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
+# No MEDIA_ROOT is configured, so FileField uploads (assessment papers,
+# report cards) land in these project-root folders during local runs.
+/assessments/papers/
+/report-cards/
+
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+.coverage
+htmlcov/
+
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+chat.rtf
+
+# console/ (Next.js)
+console/node_modules/
+console/.next/
+console/out/
+console/*.log

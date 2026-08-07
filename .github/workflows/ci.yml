@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # PostgreSQL is a hard requirement here, unlike on a workstation: CI is
+    # where the row-level security tests must actually run (ADR-0001).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: educore
+          POSTGRES_USER: educore
+          POSTGRES_PASSWORD: educore
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://educore:educore@localhost:5432/educore
+      SECRET_KEY: ci-only-key
+      DJANGO_SETTINGS_MODULE: config.settings.test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Module boundaries (ADR-0005)
+        run: lint-imports
+
+      - name: Migrations are complete
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: API schema is current
+        # The committed schema is the contract clients are generated from.
+        # A hand-drifted schema is worse than none, because clients trust it.
+        run: |
+          python manage.py spectacular --file /tmp/schema.yml --fail-on-warn
+          diff -u schema.yml /tmp/schema.yml
+
+      - name: Tests
+        run: pytest --cov --cov-report=term-missing
+
+      - name: Fail if any isolation test was skipped
+        # A green run that quietly skipped the RLS battery is worse than a red
+        # one, because it reports safety it did not verify.
+        run: pytest -m postgres --no-header -q | tee /dev/stderr | grep -qv "skipped"
+
+      - name: Audit chain integrity
+        # Listed in README's Checks section but wasn't previously enforced in
+        # CI; a break here means the hash-chaining code itself regressed.
+        run: python manage.py verify_audit_chains
+
+      - name: Deployment checks
+        run: python manage.py check --deploy --fail-level WARNING
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DEBUG: "False"
+          ALLOWED_HOSTS: ci.example.com
+          SECRET_KEY: ci-deployment-check-key-not-a-real-secret

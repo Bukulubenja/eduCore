@@ -1,0 +1,2428 @@
+openapi: 3.0.3
+info:
+  title: eduCore API
+  version: 1.0.0
+  description: School operations and accountability platform.
+paths:
+  /api/v1/announcements:
+    get:
+      operationId: announcements_retrieve
+      tags:
+      - announcements
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: announcements_create
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Announcement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Announcement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Announcement'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{announcement_id}/publish:
+    post:
+      operationId: announcements_publish_create
+      parameters:
+      - in: path
+        name: announcement_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - announcements
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/assessments:
+    get:
+      operationId: assessments_list
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - assessments
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssessmentList'
+          description: ''
+  /api/v1/assessments/{assessment_id}/approve:
+    post:
+      operationId: assessments_approve_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/begin-scoring:
+    post:
+      operationId: assessments_begin_scoring_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/lock:
+    post:
+      operationId: assessments_lock_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/moderate:
+    post:
+      operationId: assessments_moderate_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/release:
+    post:
+      operationId: assessments_release_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/return:
+    post:
+      operationId: assessments_return_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/scores:
+    get:
+      operationId: assessments_scores_retrieve
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    put:
+      operationId: assessments_scores_update
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Scores'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Scores'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Scores'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/assessments/{assessment_id}/submit:
+    post:
+      operationId: assessments_submit_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/assessments/{assessment_id}/submit-marks:
+    post:
+      operationId: assessments_submit_marks_create
+      description: |-
+        One endpoint per transition, as sub-resources rather than a state field.
+
+        Exposing `state` as a writable field would let a client jump the machine;
+        naming each act keeps the permitted paths in one place and makes the audit
+        trail read like the process it describes.
+      parameters:
+      - in: path
+        name: assessment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assessments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+          description: ''
+  /api/v1/attendance/check-in:
+    post:
+      operationId: attendance_check_in_create
+      description: |-
+        Record a check-in.
+
+        Note what this endpoint does *not* do: refuse. Weak evidence produces a
+        `provisional` disposition and a review task, and the teacher gets on with
+        their day (ADR-0002).
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/attendance/check-out:
+    post:
+      operationId: attendance_check_out_create
+      description: |-
+        Record a check-in.
+
+        Note what this endpoint does *not* do: refuse. Weak evidence produces a
+        `provisional` disposition and a review task, and the teacher gets on with
+        their day (ADR-0002).
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckIn'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/attendance/health:
+    get:
+      operationId: attendance_health_retrieve
+      description: Whether this subsystem can currently be trusted (ADR-0002).
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/attendance/qr-token:
+    get:
+      operationId: attendance_qr_token_retrieve
+      description: Issue a rotating code for a display device in the staff room.
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/attendance/records:
+    get:
+      operationId: attendance_records_list
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecordList'
+          description: ''
+  /api/v1/attendance/records/{record_id}/appeal:
+    post:
+      operationId: attendance_records_appeal_create
+      parameters:
+      - in: path
+        name: record_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appeal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Appeal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Appeal'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exception'
+          description: ''
+  /api/v1/attendance/reviews:
+    get:
+      operationId: attendance_reviews_list
+      description: 'Everything awaiting a human: provisional records and open appeals.'
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExceptionList'
+          description: ''
+  /api/v1/attendance/reviews/{exception_id}/decide:
+    post:
+      operationId: attendance_reviews_decide_create
+      parameters:
+      - in: path
+        name: exception_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Decision'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Decision'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Decision'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exception'
+          description: ''
+  /api/v1/auth/mfa/confirm:
+    post:
+      operationId: auth_mfa_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/mfa/enrol:
+    post:
+      operationId: auth_mfa_enrol_create
+      tags:
+      - auth
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/step-up:
+    post:
+      operationId: auth_step_up_create
+      description: |-
+        Exchange a current authenticator code for a single-use grant.
+
+        Separate from login because being logged in is not evidence of presence: a
+        session left open in a staff room must not be able to release a term's
+        results.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/switch-school:
+    post:
+      operationId: auth_switch_school_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchSchool'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SwitchSchool'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SwitchSchool'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/token:
+    post:
+      operationId: auth_token_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/coverage:
+    get:
+      operationId: coverage_retrieve
+      description: Coverage and pace. The number a DOS acts on in week 9, not week
+        13.
+      tags:
+      - coverage
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/gate-events:
+    post:
+      operationId: gate_events_create
+      description: Batched scans from a gate device. Per-event results, like /v1/sync.
+      tags:
+      - gate-events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GateBatch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GateBatch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GateBatch'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/imports:
+    get:
+      operationId: imports_retrieve
+      tags:
+      - imports
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/imports/guardians:
+    post:
+      operationId: imports_guardians_create
+      description: Validate a CSV, and apply it only when asked and only if it is
+        clean.
+      tags:
+      - imports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Import'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Import'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/imports/staff:
+    post:
+      operationId: imports_staff_create
+      description: Validate a CSV, and apply it only when asked and only if it is
+        clean.
+      tags:
+      - imports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Import'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Import'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/imports/students:
+    post:
+      operationId: imports_students_create
+      description: Validate a CSV, and apply it only when asked and only if it is
+        clean.
+      tags:
+      - imports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Import'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Import'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/insights/at-risk-students:
+    get:
+      operationId: insights_at_risk_students_retrieve
+      description: |-
+        Attendance and attainment signals, kept separate rather than fused.
+
+        A composite risk score nobody can decompose is a score nobody can act on,
+        and a pastoral conversation needs to know which thing is wrong.
+      tags:
+      - insights
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/insights/coverage:
+    get:
+      operationId: insights_coverage_retrieve
+      tags:
+      - insights
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/insights/punctuality:
+    get:
+      operationId: insights_punctuality_retrieve
+      tags:
+      - insights
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/insights/today:
+    get:
+      operationId: insights_today_retrieve
+      description: Is the school running? The one screen a director opens at 09:30.
+      tags:
+      - insights
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/insights/workload:
+    get:
+      operationId: insights_workload_retrieve
+      tags:
+      - insights
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lesson-instances/{lesson_id}/register:
+    get:
+      operationId: lesson_instances_register_retrieve
+      description: The roster, pre-marked present; and the exceptions coming back.
+      parameters:
+      - in: path
+        name: lesson_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - lesson-instances
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    put:
+      operationId: lesson_instances_register_update
+      description: The roster, pre-marked present; and the exceptions coming back.
+      parameters:
+      - in: path
+        name: lesson_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - lesson-instances
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmitRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmitRegister'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lesson-sessions:
+    post:
+      operationId: lesson_sessions_create
+      tags:
+      - lesson-sessions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenSession'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/v1/lesson-sessions/{session_id}/close:
+    post:
+      operationId: lesson_sessions_close_create
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - lesson-sessions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CloseSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloseSession'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/v1/me:
+    get:
+      operationId: me_retrieve
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/me/attendance:
+    get:
+      operationId: me_attendance_list
+      description: |-
+        A member of staff's own record, with the evidence behind it.
+
+        Symmetric visibility is a design requirement, not a courtesy: a workforce
+        that cannot see what the system says about them will work around it
+        (doc 01, principle 6).
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecordList'
+          description: ''
+  /api/v1/me/inbox:
+    get:
+      operationId: me_inbox_retrieve
+      description: In-app notifications for the signed-in person.
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/me/inbox/{notification_id}/read:
+    post:
+      operationId: me_inbox_read_create
+      parameters:
+      - in: path
+        name: notification_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/me/results:
+    get:
+      operationId: me_results_retrieve
+      description: Released results for a student, or for a guardian's wards.
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/me/timetable:
+    get:
+      operationId: me_timetable_retrieve
+      description: A teacher's lessons for a date, with delivery state. The app's
+        home screen.
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/report-cards:
+    get:
+      operationId: report_cards_retrieve
+      description: |-
+        Report cards a caller is entitled to see.
+
+        A guardian's scope is the set of students they hold a *verified* link to.
+        Showing a child's results to someone not entitled to them is a
+        safeguarding incident, not a bug (doc 06, threat 5).
+      tags:
+      - report-cards
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/report-cards/generate:
+    post:
+      operationId: report_cards_generate_create
+      tags:
+      - report-cards
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportCards'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateReportCards'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateReportCards'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/rooms/{room_id}/qr-token:
+    get:
+      operationId: rooms_qr_token_retrieve
+      description: Rotating code for a classroom display.
+      parameters:
+      - in: path
+        name: room_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - rooms
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/students:
+    get:
+      operationId: students_retrieve
+      description: Minimal student search for teachers building a register or mark
+        sheet.
+      tags:
+      - students
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/students/{student_id}/attendance:
+    get:
+      operationId: students_attendance_retrieve
+      parameters:
+      - in: path
+        name: student_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - students
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/sync:
+    post:
+      operationId: sync_create
+      description: |-
+        Batched offline upload.
+
+        Results are per operation. One bad record must never fail the batch, or a
+        single malformed event blocks a device's entire queue until it is evicted
+        (ADR-0003).
+      tags:
+      - sync
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sync'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sync'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sync'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/threads:
+    get:
+      operationId: threads_retrieve
+      tags:
+      - threads
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: threads_create
+      tags:
+      - threads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenThread'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenThread'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenThread'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/threads/{thread_id}/messages:
+    get:
+      operationId: threads_messages_retrieve
+      parameters:
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - threads
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: threads_messages_create
+      parameters:
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - threads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostMessage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostMessage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostMessage'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/threads/{thread_id}/messages/{message_id}/retract:
+    post:
+      operationId: threads_messages_retract_create
+      parameters:
+      - in: path
+        name: message_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: thread_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - threads
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        importance:
+          $ref: '#/components/schemas/ImportanceEnum'
+        audience: {}
+        channels: {}
+        requires_acknowledgement:
+          type: boolean
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AnnouncementStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        recipients_count:
+          type: integer
+          readOnly: true
+      required:
+      - body
+      - id
+      - published_at
+      - recipients_count
+      - status
+      - title
+    AnnouncementStatusEnum:
+      enum:
+      - draft
+      - scheduled
+      - published
+      - withdrawn
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `scheduled` - Scheduled
+        * `published` - Published
+        * `withdrawn` - Withdrawn
+    Appeal:
+      type: object
+      properties:
+        reason_code:
+          $ref: '#/components/schemas/ReasonCodeEnum'
+        narrative:
+          type: string
+          maxLength: 2000
+        requested_status:
+          type: string
+      required:
+      - reason_code
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        course:
+          type: string
+          format: uuid
+        term:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        max_score:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        scheduled_for:
+          type: string
+          format: date
+          nullable: true
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          readOnly: true
+        author:
+          type: string
+          format: uuid
+          readOnly: true
+        approved_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        moderated_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        released_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        released_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        returned_note:
+          type: string
+          readOnly: true
+      required:
+      - approved_by
+      - author
+      - course
+      - id
+      - kind
+      - max_score
+      - moderated_by
+      - released_at
+      - released_by
+      - returned_note
+      - state
+      - term
+      - title
+    AttendanceStatusEnum:
+      enum:
+      - present
+      - late
+      - partial
+      - absent
+      - on_leave
+      - holiday
+      type: string
+      description: |-
+        * `present` - Present
+        * `late` - Late
+        * `partial` - Partial
+        * `absent` - Absent
+        * `on_leave` - On leave
+        * `holiday` - Holiday
+    BlankEnum:
+      enum:
+      - ''
+    CheckIn:
+      type: object
+      properties:
+        client_event_id:
+          type: string
+          format: uuid
+        campus_id:
+          type: string
+          format: uuid
+        captured_at:
+          type: string
+          format: date-time
+        signals:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: {}
+      required:
+      - campus_id
+      - captured_at
+      - client_event_id
+    CloseSession:
+      type: object
+      properties:
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageItem'
+        notes:
+          type: string
+      required:
+      - coverage
+    CompletionEnum:
+      enum:
+      - introduced
+      - partial
+      - completed
+      type: string
+      description: |-
+        * `introduced` - Introduced
+        * `partial` - Partly covered
+        * `completed` - Completed
+    CoverageItem:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        completion:
+          allOf:
+          - $ref: '#/components/schemas/CompletionEnum'
+          default: partial
+        homework_set:
+          type: string
+        notes:
+          type: string
+      required:
+      - unit_id
+    Decision:
+      type: object
+      properties:
+        decision:
+          $ref: '#/components/schemas/DecisionDecisionEnum'
+        note:
+          type: string
+          maxLength: 2000
+      required:
+      - decision
+    DecisionDecisionEnum:
+      enum:
+      - upheld
+      - declined
+      type: string
+      description: |-
+        * `upheld` - upheld
+        * `declined` - declined
+    DirectionEnum:
+      enum:
+      - in
+      - out
+      type: string
+      description: |-
+        * `in` - Arrival
+        * `out` - Departure
+    DispositionEnum:
+      enum:
+      - verified
+      - provisional
+      - rejected
+      type: string
+      description: |-
+        * `verified` - Verified
+        * `provisional` - Provisional
+        * `rejected` - Rejected
+    Exception:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        record:
+          type: string
+          format: uuid
+        raised_by:
+          type: string
+          format: uuid
+          readOnly: true
+        reason_code:
+          $ref: '#/components/schemas/ReasonCodeEnum'
+        narrative:
+          type: string
+        requested_status:
+          oneOf:
+          - $ref: '#/components/schemas/AttendanceStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        decision:
+          allOf:
+          - $ref: '#/components/schemas/ExceptionDecisionEnum'
+          readOnly: true
+        decided_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - decided_at
+      - decided_by
+      - decision
+      - decision_note
+      - id
+      - raised_by
+      - reason_code
+      - record
+    ExceptionDecisionEnum:
+      enum:
+      - pending
+      - upheld
+      - declined
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `upheld` - Upheld
+        * `declined` - Declined
+    GateBatch:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateEvent'
+      required:
+      - events
+    GateEvent:
+      type: object
+      properties:
+        client_event_id:
+          type: string
+          format: uuid
+        scan_code:
+          type: string
+        campus_id:
+          type: string
+          format: uuid
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        occurred_at:
+          type: string
+          format: date-time
+        method:
+          allOf:
+          - $ref: '#/components/schemas/MethodEnum'
+          default: qr
+      required:
+      - campus_id
+      - client_event_id
+      - direction
+      - occurred_at
+      - scan_code
+    GenerateReportCards:
+      type: object
+      properties:
+        class_group_id:
+          type: string
+          format: uuid
+        term_id:
+          type: string
+          format: uuid
+      required:
+      - class_group_id
+      - term_id
+    Import:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+        apply:
+          type: boolean
+          default: false
+        term_id:
+          type: string
+          format: uuid
+      required:
+      - file
+    ImportanceEnum:
+      enum:
+      - routine
+      - important
+      - urgent
+      type: string
+      description: |-
+        * `routine` - Routine
+        * `important` - Important
+        * `urgent` - Urgent
+    KindEnum:
+      enum:
+      - exercise
+      - test
+      - midterm
+      - end_of_term
+      - mock
+      - national
+      type: string
+      description: |-
+        * `exercise` - Exercise
+        * `test` - Class test
+        * `midterm` - Mid-term
+        * `end_of_term` - End of term
+        * `mock` - Mock
+        * `national` - National examination
+    MethodEnum:
+      enum:
+      - qr
+      - nfc
+      - barcode
+      - manual
+      type: string
+      description: |-
+        * `qr` - QR code
+        * `nfc` - NFC card
+        * `barcode` - Barcode
+        * `manual` - Recorded manually
+    MfaCode:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 10
+      required:
+      - code
+    OpenSession:
+      type: object
+      properties:
+        room_id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        captured_at:
+          type: string
+          format: date-time
+      required:
+      - room_id
+      - token
+    OpenThread:
+      type: object
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          maxLength: 200
+        first_message:
+          type: string
+          default: ''
+      required:
+      - student_id
+      - subject
+    PaginatedAssessmentList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assessment'
+    PaginatedExceptionList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exception'
+    PaginatedRecordList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Record'
+    PostMessage:
+      type: object
+      properties:
+        body:
+          type: string
+          maxLength: 8000
+      required:
+      - body
+    ReasonCodeEnum:
+      enum:
+      - device_fault
+      - no_connectivity
+      - off_site_duty
+      - approved_leave
+      - sick
+      - other
+      type: string
+      description: |-
+        * `device_fault` - Device fault
+        * `no_connectivity` - No connectivity
+        * `off_site_duty` - Off-site school duty
+        * `approved_leave` - Approved leave
+        * `sick` - Sick
+        * `other` - Other
+    Record:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        membership_id:
+          type: string
+          format: uuid
+          readOnly: true
+        date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/AttendanceStatusEnum'
+        disposition:
+          $ref: '#/components/schemas/DispositionEnum'
+        confidence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        first_in_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_out_at:
+          type: string
+          format: date-time
+          nullable: true
+        minutes_on_site:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        resolution:
+          $ref: '#/components/schemas/ResolutionEnum'
+        policy_version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        needs_review:
+          type: boolean
+          readOnly: true
+      required:
+      - date
+      - disposition
+      - id
+      - membership_id
+      - needs_review
+      - policy_version
+      - status
+    Refresh:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+      - refresh_token
+    RegisterException:
+      type: object
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RegisterExceptionStatusEnum'
+          default: absent
+        note:
+          type: string
+          maxLength: 200
+      required:
+      - student_id
+    RegisterExceptionStatusEnum:
+      enum:
+      - present
+      - absent
+      - late
+      - excused
+      - sick
+      type: string
+      description: |-
+        * `present` - Present
+        * `absent` - Absent
+        * `late` - Late
+        * `excused` - Excused
+        * `sick` - Sick
+    ResolutionEnum:
+      enum:
+      - auto
+      - reviewed
+      - overridden
+      type: string
+      description: |-
+        * `auto` - Automatic
+        * `reviewed` - Reviewed
+        * `overridden` - Overridden
+    ScoreItem:
+      type: object
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        raw_score:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          nullable: true
+        is_absent:
+          type: boolean
+          default: false
+        comment:
+          type: string
+          maxLength: 200
+      required:
+      - student_id
+    Scores:
+      type: object
+      properties:
+        marks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreItem'
+        reason:
+          type: string
+          maxLength: 200
+      required:
+      - marks
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        lesson_instance:
+          type: string
+          format: uuid
+        actual_teacher:
+          type: string
+          format: uuid
+        room:
+          type: string
+          format: uuid
+        opened_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        room_changed:
+          type: boolean
+        late_start_minutes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        verification_confidence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        duration_minutes:
+          type: integer
+          readOnly: true
+        notes:
+          type: string
+      required:
+      - actual_teacher
+      - duration_minutes
+      - id
+      - lesson_instance
+      - opened_at
+      - room
+    StateEnum:
+      enum:
+      - draft
+      - submitted
+      - approved
+      - locked
+      - scoring
+      - moderation
+      - head_review
+      - released
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted for approval
+        * `approved` - Approved
+        * `locked` - Locked
+        * `scoring` - Scoring
+        * `moderation` - In moderation
+        * `head_review` - Awaiting head teacher
+        * `released` - Released
+    SubmitRegister:
+      type: object
+      properties:
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegisterException'
+      required:
+      - exceptions
+    SwitchSchool:
+      type: object
+      properties:
+        membership_id:
+          type: string
+          format: uuid
+      required:
+      - membership_id
+    Sync:
+      type: object
+      properties:
+        device_id:
+          type: string
+        device_time:
+          type: string
+          format: date-time
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncOperation'
+      required:
+      - operations
+    SyncOperation:
+      type: object
+      properties:
+        client_event_id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        captured_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: {}
+      required:
+      - captured_at
+      - client_event_id
+      - payload
+      - type
+    TokenRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+        membership_id:
+          type: string
+          format: uuid
+      required:
+      - email
+      - password
+    Transition:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 2000
+        step_up_token:
+          type: string
+    TypeEnum:
+      enum:
+      - attendance.check_in
+      - attendance.check_out
+      type: string
+      description: |-
+        * `attendance.check_in` - attendance.check_in
+        * `attendance.check_out` - attendance.check_out
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token from POST /api/v1/auth/token. Carries the Membership
+        claim; the tenant is derived from it and can never be supplied by the client.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

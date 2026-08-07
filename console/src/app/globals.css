@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   eduCore console tokens.
+
+   Built for a mid-range laptop under fluorescent light at half past nine in
+   the morning, not for a screenshot. Paper is a cool off-white rather than
+   cream; ink is a blue-black rather than pure black, which survives the cheap
+   panels and projectors these screens actually get shown on.
+
+   Status colours are semantic and never decorative. If something is green
+   here, it is because the evidence supported it.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-ink: #16202b;
+  --color-slate: #5a6875;
+  --color-mist: #8b97a1;
+  --color-paper: #f5f7f6;
+  --color-card: #ffffff;
+  --color-rule: #dfe3e1;
+  --color-signal: #2b5f8a;
+  --color-signal-soft: #eaf1f7;
+
+  --color-verified: #1f7a5c;
+  --color-verified-soft: #e8f3ee;
+  --color-provisional: #b5701a;
+  --color-provisional-soft: #fbf1e3;
+  --color-rejected: #a32b2b;
+  --color-rejected-soft: #f9ebeb;
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Measured values -- anything the system counted, timed or scored. Human
+   language never gets this treatment, which is what makes the distinction
+   between evidence and assertion readable at a glance. */
+.measured {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-mist);
+}
+
+:where(a, button, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* One orchestrated moment: the day's periods settle in on load. Anything more
+   than this, in an instrument people open every morning, becomes friction. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settle {
+  animation: settle 340ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settle {
+    animation: none;
+  }
+}

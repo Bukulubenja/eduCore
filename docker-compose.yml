@@ -1,0 +1,40 @@
+# Local backing services. The application itself runs on the host during
+# development; only stateful dependencies live here.
+#
+# PostgreSQL is not optional for a meaningful test run: without it the
+# row-level security half of the isolation battery is skipped, and that is the
+# layer that catches the mistakes the other two miss (ADR-0001).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: educore
+      POSTGRES_USER: educore
+      POSTGRES_PASSWORD: educore
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U educore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
