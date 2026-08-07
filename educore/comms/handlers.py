@@ -103,6 +103,36 @@ def alert_deputy_to_provisional_checkin(payload, *, message=None):
         )
 
 
+@subscribe("presence.staff_absence.detected")
+def alert_leadership_to_staff_absences(payload, *, message=None):
+    """Staff expected on duty today who never checked in at all.
+
+    A stronger claim than the provisional-check-in alert above: not weak
+    evidence, but no evidence whatsoever. `presence` only decides *that* this
+    happened and *who* -- deciding leadership should hear about it, and
+    de-duplicating repeat beat runs onto one notification per day, is this
+    module's job (dedupe_key carries only the date: the uniqueness constraint
+    is per-recipient already, so nothing here can double-notify).
+    """
+    date = payload["date"]
+    members = payload.get("members", [])
+    if not members:
+        return
+
+    for recipient in _leadership(message):
+        notify(
+            recipient=recipient,
+            topic="presence.staff_absence.detected",
+            title=f"{len(members)} staff member(s) did not check in today",
+            body=(f"On {date}, {len(members)} staff member(s) expected on duty "
+                  "never checked in."),
+            payload=payload,
+            importance=Notification.Importance.URGENT,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"staffabsence:{date}",
+        )
+
+
 @subscribe("delivery.substitution.inferred")
 def confirm_inferred_substitution(payload, *, message=None):
     for recipient in _leadership(message):

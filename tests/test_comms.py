@@ -128,6 +128,87 @@ def test_provisional_checkins_alert_leadership_but_verified_ones_do_not(
     assert alerts.count() == 1
 
 
+def test_staff_absence_alert_reaches_the_deputy(school_a, teacher, deputy, policy,
+                                                morning):
+    """The proactive half of presence: nobody heard from them at all."""
+    from educore.presence import services as presence
+
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(school_a):
+        presence.raise_absence_alerts(date=date, now=well_after_start)
+
+    relay_all_tenants()
+
+    with TenantContext.scope(school_a):
+        alert = Notification.objects.get(recipient=deputy,
+                                         topic="presence.staff_absence.detected")
+
+    assert "did not check in" in alert.title
+    assert alert.importance == Notification.Importance.URGENT
+
+
+def test_staff_who_checked_in_does_not_appear_in_the_alert(
+    school_a, teacher, deputy, campus, morning, good_signals, policy
+):
+    """A staff member who checked in must never appear among the absentees --
+    even though the deputy, who is staff too and hasn't checked in either,
+    legitimately does, and so still triggers one alert."""
+    import uuid
+
+    from educore.presence import services as presence
+
+    with TenantContext.scope(school_a):
+        presence.submit_event(membership=teacher, campus=campus,
+                              kind="check_in", captured_at=morning,
+                              client_event_id=uuid.uuid4(),
+                              raw_signals=good_signals(morning))
+
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(school_a):
+        presence.raise_absence_alerts(date=date, now=well_after_start)
+
+    relay_all_tenants()
+
+    with TenantContext.scope(school_a):
+        alert = Notification.objects.get(recipient=deputy,
+                                         topic="presence.staff_absence.detected")
+        member_ids = {m["membership_id"] for m in alert.payload["members"]}
+
+    assert str(teacher.pk) not in member_ids
+    assert str(deputy.pk) in member_ids
+
+
+def test_repeated_beat_runs_do_not_spam_the_absence_alert(
+    school_a, teacher, deputy, policy, morning
+):
+    """The scheduler may rerun this every few minutes all day; the deputy
+    should hear about it once."""
+    from educore.presence import services as presence
+
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(school_a):
+        presence.raise_absence_alerts(date=date, now=well_after_start)
+    relay_all_tenants()
+
+    with TenantContext.scope(school_a):
+        presence.raise_absence_alerts(date=date,
+                                      now=well_after_start + timedelta(minutes=15))
+    relay_all_tenants()
+
+    with TenantContext.scope(school_a):
+        count = Notification.objects.filter(
+            recipient=deputy, topic="presence.staff_absence.detected"
+        ).count()
+
+    assert count == 1
+
+
 # -- Channels and preferences ------------------------------------------------
 
 
@@ -314,3 +395,33 @@ def test_relay_outbox_command_drains_and_sends(school_a, lesson, students,
                                       notification__recipient=parent)
 
     assert in_app.status == Delivery.Status.DELIVERED
+
+
+def test_alert_staff_absences_command_flags_and_notifies(school_a, teacher, deputy,
+                                                          policy):
+    """The command end to end: no --now hook, so the grace window is forced
+    open by backdating the policy's duty start rather than the clock."""
+    from datetime import time
+
+    from django.core.management import call_command
+    from django.test import override_settings
+
+    from educore.core.models import OutboxMessage
+
+    with TenantContext.scope(school_a):
+        policy.day_starts_at = time(0, 0)
+        policy.late_grace_minutes = 0
+        policy.save(update_fields=["day_starts_at", "late_grace_minutes",
+                                   "updated_at"])
+
+    with override_settings(STAFF_ABSENCE_ALERT_GRACE_MINUTES=0):
+        call_command("alert_staff_absences")
+        call_command("relay_outbox")
+
+    with TenantContext.scope(school_a):
+        event = OutboxMessage.objects.get(topic="presence.staff_absence.detected")
+        alert = Notification.objects.get(recipient=deputy,
+                                         topic="presence.staff_absence.detected")
+
+    assert {"membership_id": str(teacher.pk)} in event.payload["members"]
+    assert alert.importance == Notification.Importance.URGENT

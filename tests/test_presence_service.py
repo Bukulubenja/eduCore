@@ -402,3 +402,112 @@ def test_health_metrics_flag_a_miscalibrated_school(teacher, campus, morning,
     assert metrics["records"] == 1
     assert metrics["provisional_rate"] == 1.0
     assert metrics["provisional_rate_exceeded"] is True
+
+
+# -- Staff absence alert ------------------------------------------------------
+
+
+def test_staff_with_no_checkin_is_flagged_absent(teacher, policy, morning):
+    """Nobody heard from them at all -- the case an event log cannot show."""
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        absent = services.detect_staff_absences(date=date, now=well_after_start)
+
+    assert teacher in absent
+
+
+def test_staff_who_checked_in_is_not_flagged(teacher, campus, morning,
+                                             good_signals, policy):
+    check_in(teacher, campus, morning, good_signals(morning))
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        absent = services.detect_staff_absences(date=date, now=well_after_start)
+
+    assert teacher not in absent
+
+
+def test_a_weak_or_disputed_checkin_still_counts_as_having_been_heard_from(
+    teacher, campus, morning, policy
+):
+    """This alert is about silence, not about evidence quality.
+
+    A check-in with thin or failing evidence is exactly what the
+    provisional/review queue and appeal process exist to handle; folding it
+    into "never showed up" would send leadership chasing someone who is, in
+    fact, on site.
+    """
+    check_in(teacher, campus, morning, {})     # no evidence at all
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        absent = services.detect_staff_absences(date=date, now=well_after_start)
+
+    assert teacher not in absent
+
+
+def test_absence_detection_waits_for_the_grace_window(teacher, policy, morning):
+    """Too early to call it an absence -- they may simply be running late."""
+    date = morning.date()
+    too_soon = morning.replace(hour=7, minute=45)   # inside late grace, before alert grace
+
+    with TenantContext.scope(teacher.school_id):
+        absent = services.detect_staff_absences(date=date, now=too_soon)
+
+    assert absent == []
+
+
+def test_absence_detection_skips_a_declared_holiday(teacher, policy, morning):
+    from educore.timetable.models import CalendarException
+
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        CalendarException.objects.create(
+            school_id=teacher.school_id, date=date,
+            kind=CalendarException.Kind.HOLIDAY,
+        )
+        absent = services.detect_staff_absences(date=date, now=well_after_start)
+
+    assert absent == []
+
+
+def test_raise_absence_alerts_queues_one_event_naming_the_absentees(
+    teacher, policy, morning
+):
+    from educore.core.models import OutboxMessage
+
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        count = services.raise_absence_alerts(date=date, now=well_after_start)
+        event = OutboxMessage.objects.get(topic="presence.staff_absence.detected")
+
+    assert count == 1
+    assert event.payload["date"] == str(date)
+    assert {"membership_id": str(teacher.pk)} in event.payload["members"]
+
+
+def test_raise_absence_alerts_is_a_noop_when_everyone_checked_in(
+    teacher, campus, morning, good_signals, policy
+):
+    from educore.core.models import OutboxMessage
+
+    check_in(teacher, campus, morning, good_signals(morning))
+    date = morning.date()
+    well_after_start = morning.replace(hour=10, minute=0)
+
+    with TenantContext.scope(teacher.school_id):
+        count = services.raise_absence_alerts(date=date, now=well_after_start)
+
+    assert count == 0
+    with TenantContext.scope(teacher.school_id):
+        assert not OutboxMessage.objects.filter(
+            topic="presence.staff_absence.detected"
+        ).exists()
