@@ -67,6 +67,7 @@ export function Empty({ children }: { children: ReactNode }) {
 export function Button({
   children,
   variant = "primary",
+  className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "quiet";
@@ -79,7 +80,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${styles}`}
+      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${styles} ${className ?? ""}`}
     >
       {children}
     </button>

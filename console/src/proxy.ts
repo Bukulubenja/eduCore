@@ -34,5 +34,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // `manifest.webmanifest` and `sw.js` must stay reachable with no session:
+  // a browser's install-banner and service-worker-registration checks fetch
+  // both unauthenticated, and a 307 to `/login` for either silently breaks
+  // "add to home screen" with no error a developer would ever see in the UI.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js).*)",
+  ],
 };
