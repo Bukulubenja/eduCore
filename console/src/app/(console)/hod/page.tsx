@@ -52,21 +52,31 @@ function PaceTrack({ report }: { report: Report }) {
 }
 
 /**
- * A head of department's own pace, not the school's.
+ * A head of department's own pace, not the school's -- when the account
+ * actually is a HOD's.
  *
- * The backend infers the department from the caller's staff profile and
- * refuses to widen the view -- this page never sends a `department_id`, so
- * whatever comes back is already the caller's own department's coverage.
+ * This page never sends a `department_id`, and for a genuine HOD the backend
+ * infers one from their staff profile and refuses to widen the view. But
+ * `/coverage` has always been open-access with no role gate (see
+ * `_resolve_department_scope` in `educore/delivery/views.py`): a caller who
+ * is neither leadership nor HOD still gets a valid, unscoped, school-wide
+ * response rather than a 403. `department_id` in that response is the only
+ * way to tell the two cases apart, so this page reads it rather than
+ * assuming every visitor is a HOD.
  */
 export default function HodCoveragePage() {
   const [reports, setReports] = useState<Report[] | null>(null);
+  const [scoped, setScoped] = useState(true);
   const [error, setError] = useState("");
   const [notAssigned, setNotAssigned] = useState(false);
 
   useEffect(() => {
     api
       .get<CoverageResponse>("/coverage")
-      .then((body) => setReports(body.results))
+      .then((body) => {
+        setReports(body.results);
+        setScoped(body.department_id !== null);
+      })
       .catch((err) => {
         if (err instanceof ApiError && err.type.endsWith("/no-department")) {
           setNotAssigned(true);
@@ -105,13 +115,22 @@ export default function HodCoveragePage() {
       <header>
         <p className="eyebrow">Department</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Your department&rsquo;s pace
+          {scoped ? "Your department’s pace" : "School-wide pace"}
         </h1>
-        <p className="mt-3 max-w-xl text-sm text-slate">
-          Every class taking one of your department&rsquo;s courses, measured
-          in lesson periods that actually happened -- not the whole school,
-          just what you can act on.
-        </p>
+        {scoped ? (
+          <p className="mt-3 max-w-xl text-sm text-slate">
+            Every class taking one of your department&rsquo;s courses,
+            measured in lesson periods that actually happened — not the whole
+            school, just what you can act on.
+          </p>
+        ) : (
+          <p className="mt-3 max-w-xl text-sm text-slate">
+            Your account isn&rsquo;t scoped to a single department, so this
+            shows every class in the school. Ask a director of studies to set
+            a department on your staff profile to narrow this to just what
+            you can act on.
+          </p>
+        )}
       </header>
 
       <Panel

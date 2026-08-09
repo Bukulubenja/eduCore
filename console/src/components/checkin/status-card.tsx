@@ -13,7 +13,7 @@ import type { SubmissionOutcome } from "@/lib/checkin/types";
 export function StatusCard({ outcome }: { outcome: SubmissionOutcome }) {
   if (outcome.kind === "queued") {
     return (
-      <div className="settle rounded-lg border border-signal/30 bg-signal-soft px-4 py-3.5">
+      <div className="settle rounded-lg border border-signal/70 bg-signal-soft px-4 py-3.5">
         <p className="text-sm font-semibold text-signal">
           Queued — no connection
         </p>
@@ -27,7 +27,7 @@ export function StatusCard({ outcome }: { outcome: SubmissionOutcome }) {
 
   if (outcome.kind === "rejected") {
     return (
-      <div className="settle rounded-lg border border-rejected/30 bg-rejected-soft px-4 py-3.5">
+      <div className="settle rounded-lg border border-rejected/70 bg-rejected-soft px-4 py-3.5">
         <p className="text-sm font-semibold text-rejected">Could not submit</p>
         <p className="mt-1 text-xs text-slate">{outcome.reason}</p>
       </div>
@@ -40,7 +40,7 @@ export function StatusCard({ outcome }: { outcome: SubmissionOutcome }) {
   // fourth kind.
   if (outcome.disposition === "verified") {
     return (
-      <div className="settle rounded-lg border border-verified/30 bg-verified-soft px-4 py-3.5">
+      <div className="settle rounded-lg border border-verified/80 bg-verified-soft px-4 py-3.5">
         <p className="text-sm font-semibold text-verified">Checked in</p>
         <p className="mt-1 text-xs text-slate">
           Evidence confirmed —{" "}
@@ -52,7 +52,7 @@ export function StatusCard({ outcome }: { outcome: SubmissionOutcome }) {
 
   if (outcome.disposition === "provisional") {
     return (
-      <div className="settle rounded-lg border border-provisional/30 bg-provisional-soft px-4 py-3.5">
+      <div className="settle rounded-lg border border-provisional/80 bg-provisional-soft px-4 py-3.5">
         <p className="text-sm font-semibold text-provisional">
           Recorded — flagged for review
         </p>
@@ -67,7 +67,7 @@ export function StatusCard({ outcome }: { outcome: SubmissionOutcome }) {
   }
 
   return (
-    <div className="settle rounded-lg border border-rejected/30 bg-rejected-soft px-4 py-3.5">
+    <div className="settle rounded-lg border border-rejected/70 bg-rejected-soft px-4 py-3.5">
       <p className="text-sm font-semibold text-rejected">Not accepted</p>
       <p className="mt-1 text-xs text-slate">
         The evidence contradicted your claim (

@@ -99,8 +99,10 @@ export default function AttendanceHistoryPage() {
               </div>
               <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-slate">
                 <span>
-                  {STATUS_LABEL[record.status]} · in {formatTime(record.first_in_at)} ·
-                  {" "}out {formatTime(record.last_out_at)}
+                  {STATUS_LABEL[record.status]} · in{" "}
+                  <span className="measured">{formatTime(record.first_in_at)}</span>{" "}
+                  · out{" "}
+                  <span className="measured">{formatTime(record.last_out_at)}</span>
                 </span>
               </div>
               {record.needs_review && (

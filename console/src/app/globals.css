@@ -15,7 +15,11 @@
 @theme {
   --color-ink: #16202b;
   --color-slate: #5a6875;
-  --color-mist: #8b97a1;
+  /* #8b97a1 read at 2.77-2.98:1 against paper/card -- fails WCAG AA (4.5:1)
+     wherever used as real text (loading states, .eyebrow). Darkened to clear
+     4.5:1 against both (4.71:1 minimum) while staying visibly the lightest,
+     quietest tone in the system. */
+  --color-mist: #657078;
   --color-paper: #f5f7f6;
   --color-card: #ffffff;
   --color-rule: #dfe3e1;
@@ -24,7 +28,10 @@
 
   --color-verified: #1f7a5c;
   --color-verified-soft: #e8f3ee;
-  --color-provisional: #b5701a;
+  /* #b5701a read at 3.55:1 against its own -soft fill and 3.96:1 against
+     card -- both fail WCAG AA (4.5:1). Darkened just enough to clear both
+     (4.80:1 / 5.36:1) without changing the hue. */
+  --color-provisional: #9a5c15;
   --color-provisional-soft: #fbf1e3;
   --color-rejected: #a32b2b;
   --color-rejected-soft: #f9ebeb;

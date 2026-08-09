@@ -89,7 +89,7 @@ export default function CheckinPage() {
       </header>
 
       {pending > 0 && (
-        <div className="flex items-center justify-between rounded-md border border-signal/30 bg-signal-soft px-3.5 py-2.5 text-xs text-signal">
+        <div className="flex items-center justify-between rounded-md border border-signal/70 bg-signal-soft px-3.5 py-2.5 text-xs text-signal">
           <span>
             <span className="measured">{pending}</span>{" "}
             {pending === 1 ? "event" : "events"} waiting to sync

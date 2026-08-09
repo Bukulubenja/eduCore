@@ -15,6 +15,7 @@ import { cookies } from "next/headers";
 export const ACCESS_COOKIE = "ec_at";
 export const REFRESH_COOKIE = "ec_rt";
 export const SCHOOL_COOKIE = "ec_school";
+export const ROLES_COOKIE = "ec_roles";
 
 const secure = process.env.NODE_ENV === "production";
 
@@ -30,6 +31,28 @@ export type Tokens = {
   refresh_token: string;
   school_id?: string;
 };
+
+/**
+ * Read the `rls` (role codes) claim straight off the access token, with no
+ * signature check.
+ *
+ * This is presentation only -- which nav links to show, which forms to
+ * render read-only -- never an authorisation decision. The server re-checks
+ * every real permission on every request regardless of what this returns
+ * (see `proxy.ts`'s own note on the same principle for the cookie-presence
+ * check). Verifying the signature here would buy nothing: the token just
+ * came from this app's own trusted backend over HTTPS, not from the user.
+ */
+function decodeRoles(accessToken: string): string[] {
+  try {
+    const payload = accessToken.split(".")[1];
+    const json = Buffer.from(payload, "base64url").toString("utf-8");
+    const claims = JSON.parse(json) as { rls?: unknown };
+    return Array.isArray(claims.rls) ? claims.rls.filter((r) => typeof r === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export async function readSession() {
   const jar = await cookies();
@@ -55,11 +78,20 @@ export async function writeSession(tokens: Tokens) {
       maxAge: 30 * 86400,
     });
   }
+  // Same non-secret, readable-by-client rationale as SCHOOL_COOKIE above:
+  // role codes aren't sensitive, and every page that reads this for a UI
+  // decision (nav filtering, read-only forms) is still enforced for real by
+  // the API on the actual request.
+  jar.set(ROLES_COOKIE, JSON.stringify(decodeRoles(tokens.access_token)), {
+    ...BASE,
+    httpOnly: false,
+    maxAge: 30 * 86400,
+  });
 }
 
 export async function clearSession() {
   const jar = await cookies();
-  for (const name of [ACCESS_COOKIE, REFRESH_COOKIE, SCHOOL_COOKIE]) {
+  for (const name of [ACCESS_COOKIE, REFRESH_COOKIE, SCHOOL_COOKIE, ROLES_COOKIE]) {
     jar.delete(name);
   }
 }
