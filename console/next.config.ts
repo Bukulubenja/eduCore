@@ -10,6 +10,22 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   outputFileTracingRoot: path.resolve(__dirname),
+
+  async headers() {
+    return [
+      {
+        // Never let a CDN or the browser cache the service worker itself --
+        // a stale worker stuck serving an old cached shell is worse than no
+        // worker at all, and this file is the one thing that must always be
+        // re-fetched to pick up a new version.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
