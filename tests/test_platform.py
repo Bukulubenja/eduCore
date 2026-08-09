@@ -46,6 +46,10 @@ def test_a_provisioned_school_is_usable_immediately(plan):
 
 
 def test_the_seeded_administrator_can_be_invited_but_not_yet_log_in(plan):
+    from django.core import mail
+
+    from educore.core.models import InviteToken
+
     result = services.provision_school(name="Jinja College", plan_code="standard",
                                        admin_email="admin@jinja.example")
     membership = result["admin_membership"]
@@ -54,7 +58,12 @@ def test_the_seeded_administrator_can_be_invited_but_not_yet_log_in(plan):
     assert not membership.user.has_usable_password()
     with TenantContext.scope(result["school"].id):
         codes = {ra.role.code for ra in membership.role_assignments.all()}
+        assert InviteToken.objects.filter(membership=membership).exists()
     assert codes == {"director", "ict_admin"}
+    # A real invitation is delivered -- provisioning does not just create a
+    # dead-end account nobody can ever activate.
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["admin@jinja.example"]
 
 
 def test_a_duplicate_slug_is_refused(plan):
@@ -218,10 +227,13 @@ def test_applying_a_clean_file_creates_staff(school_a, make_role):
 
     assert result.applied
     with TenantContext.scope(school_a.id):
+        from educore.core.models import InviteToken
+
         assert Membership.objects.count() == 2
         membership = Membership.objects.get(user__email="grace@example.com")
         assert membership.status == Membership.Status.INVITED
         assert {ra.role.code for ra in membership.role_assignments.all()} == {"teacher"}
+        assert InviteToken.objects.filter(membership=membership).exists()
 
 
 def test_a_file_with_any_bad_row_imports_nothing(school_a, make_role):
@@ -309,8 +321,30 @@ def test_guardian_links_are_created_unverified(school_a, students, class_group):
 
     assert result.applied
     with TenantContext.scope(school_a.id):
+        from educore.core.models import InviteToken
+
         link = GuardianLink.objects.get()
         assert link.verified is False
+        assert InviteToken.objects.filter(membership=link.membership).exists()
+
+
+def test_a_guardian_already_a_member_is_not_re_invited(school_a, students):
+    """`import_guardians` uses get_or_create on the Membership: a guardian
+    with two children must not receive a second invite token for the second
+    row."""
+    from educore.core.models import InviteToken, Membership
+
+    csv_content = (
+        "admission_number,guardian_name,email,relationship\n"
+        f"{students[0].admission_number},Mary N,mary@example.com,mother\n"
+        f"{students[1].admission_number},Mary N,mary@example.com,mother\n"
+    )
+
+    importers.import_guardians(csv_content, school_id=school_a.id, dry_run=False)
+
+    with TenantContext.scope(school_a.id):
+        membership = Membership.objects.get(user__email="mary@example.com")
+        assert InviteToken.objects.filter(membership=membership).count() == 1
 
 
 def test_a_guardian_with_no_contact_details_is_rejected(school_a, students):

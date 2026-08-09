@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from django.contrib.auth import authenticate
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -86,6 +86,58 @@ class TokenObtainView(APIView):
         user.last_login_at = timezone.now()
         user.save(update_fields=["last_login_at"])
         return Response(_token_response(chosen))
+
+
+class AcceptInviteSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
+class AcceptInviteView(APIView):
+    """Redeem an invite token: set a password, activate the membership, log in.
+
+    `GET` is a non-consuming pre-flight check the console uses to show "this
+    invite has expired" before anyone types a password, rather than only
+    after a failed submit. `POST` is the one that actually redeems the token.
+
+    Errors deliberately do not distinguish a token that never existed from
+    one that expired or was already used -- same anti-enumeration discipline
+    as `TokenObtainView`.
+    """
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        parameters=[OpenApiParameter(
+            name="token", type=str, location=OpenApiParameter.QUERY,
+            required=True, description="The raw invite token from the email link.",
+        )],
+        responses=dict,
+    )
+    def get(self, request):
+        token = request.query_params.get("token", "")
+        return Response({"valid": bool(token) and tokens.invite_is_live(token)})
+
+    @extend_schema(request=AcceptInviteSerializer, responses=dict)
+    def post(self, request):
+        payload = AcceptInviteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+
+        try:
+            membership = tokens.accept_invite(data["token"], data["password"])
+        except tokens.InvitePasswordInvalidError as exc:
+            raise ProblemError({"password": exc.messages}, "invalid-request",
+                               status.HTTP_400_BAD_REQUEST) from exc
+        except tokens.InviteTokenError as exc:
+            raise ProblemError(
+                "This invitation link is invalid or has expired.",
+                "invite-token-invalid", status.HTTP_400_BAD_REQUEST,
+            ) from exc
+
+        # Auto-login: the person lands signed in, not back at a login screen.
+        return Response(_token_response(membership))
 
 
 class RefreshSerializer(serializers.Serializer):

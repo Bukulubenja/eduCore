@@ -7,6 +7,8 @@ from educore.core import views as core_views
 api_v1 = [
     path("auth/token", core_views.TokenObtainView.as_view(), name="auth-token"),
     path("auth/refresh", core_views.TokenRefreshView.as_view(), name="auth-refresh"),
+    path("auth/accept-invite", core_views.AcceptInviteView.as_view(),
+         name="auth-accept-invite"),
     path("auth/switch-school", core_views.SwitchSchoolView.as_view(),
          name="auth-switch-school"),
     path("auth/mfa/enrol", core_views.MfaEnrolView.as_view(), name="mfa-enrol"),

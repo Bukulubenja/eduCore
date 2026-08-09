@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from educore.core import audit
+from educore.core.invites import send_invite
 from educore.core.models import Membership, Role, School, User
 from educore.core.tenancy import TenantContext
 
@@ -149,6 +150,7 @@ def _seed_administrator(school, email: str, full_name: str):
             school_id=school.id, membership=membership,
             role=Role.objects.get(code=code),
         )
+    send_invite(membership)
     return membership
 
 

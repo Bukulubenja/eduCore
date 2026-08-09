@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 from django.db import transaction
 
+from educore.core.invites import send_invite
 from educore.core.models import Membership, Role, RoleAssignment, User
 from educore.core.tenancy import TenantContext
 
@@ -130,6 +131,7 @@ def import_staff(content, *, school_id, actor=None, dry_run: bool = True):
                     school_id=school_id, membership=membership,
                     role=entry["role"],
                 )
+                send_invite(membership)
             result.applied = True
 
         _record_batch(result, school_id, actor, dry_run)
@@ -292,10 +294,12 @@ def import_guardians(content, *, school_id, actor=None, dry_run: bool = True):
                     user.set_unusable_password()
                     user.save(update_fields=["password"])
 
-                membership, _ = Membership.objects.get_or_create(
+                membership, created = Membership.objects.get_or_create(
                     school_id=school_id, user=user,
                     defaults={"status": Membership.Status.INVITED},
                 )
+                if created:
+                    send_invite(membership)
                 parent_role = Role.objects.filter(code="parent").first()
                 if parent_role:
                     RoleAssignment.objects.get_or_create(
