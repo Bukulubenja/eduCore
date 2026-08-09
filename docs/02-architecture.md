@@ -152,13 +152,26 @@ tenant set can read no tenant rows at all.
 The operator portal runs as a distinct role with RLS bypass, on a separate
 hostname, behind IP allowlist and mandatory hardware MFA.
 
-### Hot-table partitioning
+### Hot-table partitioning (planned, Phase 4 — not yet implemented)
 
 `attendance_event`, `attendance_signal`, `student_attendance`, and `audit_event`
-are range-partitioned by month and sub-scoped by `school_id` in their primary
-index. These tables dominate growth: a 1,000-student school generates roughly
-6–8 million student-attendance rows per year. Partitioning keeps index depth flat
-and makes retention deletion a `DROP PARTITION` instead of a long-running delete.
+are designed to become range-partitioned by month, sub-scoped by `school_id` in
+their primary index. These tables dominate growth: a 1,000-student school
+generates roughly 6–8 million student-attendance rows per year. Partitioning
+is intended to keep index depth flat and make retention deletion a
+`DROP PARTITION` instead of a long-running delete.
+
+As of this writing the tables above are plain, unpartitioned Postgres tables.
+`educore.core.db.partition_by_range()` implements the retrofit mechanics
+(rename, recreate with `PARTITION BY`, attach the original as the DEFAULT
+partition), but it has not been applied: doing so first requires widening the
+`(school_id, id)`-style unique constraints these tables carry to include the
+future partition column, because native partitioning requires the partition
+key in every unique index, and at least one plain foreign key
+(`presence_attendancesignal.event_id` → `presence_attendanceevent.id`) targets
+the current single-column key. See
+[`docs/partitioning-plan.md`](partitioning-plan.md) for the full rollout plan
+and what must be verified against a staging Postgres before it runs.
 
 ## Runtime environments
 

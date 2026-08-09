@@ -19,6 +19,7 @@ never leave the two silently diverged.
 | 06a | [DPIA](06a-dpia.md) | Data protection impact assessment: inventory, lawful basis, risk, gaps |
 | 06b | [Restore Drills](06b-restore-drills.md) | Backup/restore runbook and the current gap against doc 06's claims |
 | 07 | [Delivery Plan](07-delivery-plan.md) | Phases with exit criteria, team shape, risks |
+| — | [Partitioning Plan](partitioning-plan.md) | Phase 4 hot-table partitioning: design, blocked-on, rollout steps |
 
 ## Architecture Decision Records
 
