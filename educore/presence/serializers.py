@@ -7,6 +7,7 @@ from rest_framework import serializers
 from .models import (
     AttendanceEvent,
     AttendanceException,
+    AttendancePolicy,
     AttendanceRecord,
     AttendanceSignal,
     SignalType,
@@ -50,6 +51,27 @@ class ExceptionSerializer(serializers.ModelSerializer):
                   "decision_note", "created_at"]
         read_only_fields = ["decision", "decided_by", "decided_at",
                             "decision_note", "created_at", "raised_by"]
+
+
+class PolicySerializer(serializers.ModelSerializer):
+    """Scoring rules for one school.
+
+    Every field but the identity ones (`id`, `version`, `is_active`) is
+    revisable: a `POST`/`PUT` submits any subset of them and gets back the
+    new, active version. Nothing here is ever mutated in place -- see
+    `AttendancePolicy` and `services.revise_policy`.
+    """
+
+    class Meta:
+        model = AttendancePolicy
+        fields = [
+            "id", "version", "is_active", "weights", "accept_threshold",
+            "review_threshold", "min_evidence_weight", "geofence_radius_m",
+            "geofence_trusted_accuracy_m", "day_starts_at", "day_ends_at",
+            "late_grace_minutes", "early_checkin_minutes",
+            "max_clock_skew_seconds", "qr_token_ttl_seconds",
+        ]
+        read_only_fields = ["id", "version", "is_active"]
 
 
 class RawSignalsField(serializers.DictField):

@@ -16,6 +16,7 @@ urlpatterns = [
     path("attendance/reviews/<uuid:exception_id>/decide",
          views.DecideAppealView.as_view(), name="decide"),
     path("attendance/health", views.HealthMetricsView.as_view(), name="health"),
+    path("attendance/policy", views.PolicyView.as_view(), name="policy"),
     path("me/attendance", views.MyAttendanceView.as_view(), name="my-attendance"),
     path("sync", views.SyncView.as_view(), name="sync"),
 ]

@@ -550,6 +550,89 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/attendance/policy:
+    get:
+      operationId: attendance_policy_retrieve
+      description: |-
+        The school's attendance-confidence thresholds (doc 07 phase 1).
+
+        A policy is never edited in place (see `AttendancePolicy` and
+        `services.revise_policy`), so `POST` here always produces a new version
+        rather than mutating the one every existing record cites.
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: ''
+    post:
+      operationId: attendance_policy_create
+      description: |-
+        The school's attendance-confidence thresholds (doc 07 phase 1).
+
+        A policy is never edited in place (see `AttendancePolicy` and
+        `services.revise_policy`), so `POST` here always produces a new version
+        rather than mutating the one every existing record cites.
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Policy'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Policy'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Policy'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: ''
+    put:
+      operationId: attendance_policy_update
+      description: |-
+        The school's attendance-confidence thresholds (doc 07 phase 1).
+
+        A policy is never edited in place (see `AttendancePolicy` and
+        `services.revise_policy`), so `POST` here always produces a new version
+        rather than mutating the one every existing record cites.
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Policy'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Policy'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Policy'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: ''
   /api/v1/attendance/qr-token:
     get:
       operationId: attendance_qr_token_retrieve
@@ -2142,6 +2225,82 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Record'
+    Policy:
+      type: object
+      description: |-
+        Scoring rules for one school.
+
+        Every field but the identity ones (`id`, `version`, `is_active`) is
+        revisable: a `POST`/`PUT` submits any subset of them and gets back the
+        new, active version. Nothing here is ever mutated in place -- see
+        `AttendancePolicy` and `services.revise_policy`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        weights: {}
+        accept_threshold:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        review_threshold:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        min_evidence_weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        geofence_radius_m:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        geofence_trusted_accuracy_m:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        day_starts_at:
+          type: string
+          format: time
+        day_ends_at:
+          type: string
+          format: time
+        late_grace_minutes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        early_checkin_minutes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        max_clock_skew_seconds:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        qr_token_ttl_seconds:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - id
+      - is_active
+      - version
     PostMessage:
       type: object
       properties:

@@ -35,6 +35,18 @@ def deputy_api(deputy, policy):
     return client_for(deputy)
 
 
+@pytest.fixture
+def dos(school_a, make_membership, grant_role):
+    membership = make_membership(school_a, email="dos@example.com", name="A DOS")
+    grant_role(membership, "dos", "Director of Studies")
+    return membership
+
+
+@pytest.fixture
+def dos_api(dos, policy):
+    return client_for(dos)
+
+
 def check_in_body(campus, at, signals):
     return {
         "client_event_id": str(uuid.uuid4()),
@@ -211,6 +223,93 @@ def test_a_teacher_may_not_decide_their_own_appeal(teacher_api, campus, morning)
 def test_health_metrics_are_restricted_to_leadership(teacher_api, deputy_api):
     assert teacher_api.get(reverse("v1:presence:health")).status_code == 403
     assert deputy_api.get(reverse("v1:presence:health")).status_code == 200
+
+
+# -- Policy --------------------------------------------------------------
+
+
+def test_anyone_may_read_the_active_policy(teacher_api, policy):
+    response = teacher_api.get(reverse("v1:presence:policy"))
+
+    assert response.status_code == 200
+    assert response.data["version"] == policy.version
+    assert response.data["accept_threshold"] == policy.accept_threshold
+
+
+def test_dos_may_revise_the_policy(dos_api, policy):
+    response = dos_api.post(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 80, "review_threshold": 50}, format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["accept_threshold"] == 80
+    assert response.data["review_threshold"] == 50
+    assert response.data["version"] == policy.version + 1
+
+
+def test_a_deputy_may_not_revise_the_policy(deputy_api):
+    response = deputy_api.post(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 80, "review_threshold": 50}, format="json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_a_teacher_may_not_revise_the_policy(teacher_api):
+    response = teacher_api.post(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 80, "review_threshold": 50}, format="json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_a_revision_creates_a_new_version_rather_than_mutating_the_old_one(
+    dos_api, policy, school_a
+):
+    from educore.presence.models import AttendancePolicy
+
+    original_id = policy.id
+    original_accept_threshold = policy.accept_threshold
+
+    response = dos_api.post(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 90}, format="json",
+    )
+    assert response.status_code == 200
+
+    with TenantContext.scope(school_a):
+        stale = AttendancePolicy.objects.get(pk=original_id)
+        assert stale.is_active is False
+        assert stale.accept_threshold == original_accept_threshold
+
+        active = AttendancePolicy.objects.get(is_active=True)
+        assert active.id != original_id
+        assert active.version == policy.version + 1
+        assert active.accept_threshold == 90
+        # Untouched fields carry forward from the superseded version.
+        assert active.review_threshold == policy.review_threshold
+
+
+def test_put_also_revises_the_policy(dos_api):
+    response = dos_api.put(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 85, "review_threshold": 40}, format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["accept_threshold"] == 85
+
+
+def test_thresholds_out_of_order_are_rejected(dos_api):
+    response = dos_api.post(
+        reverse("v1:presence:policy"),
+        {"accept_threshold": 30, "review_threshold": 60}, format="json",
+    )
+
+    assert response.status_code == 422
 
 
 # -- Offline sync ------------------------------------------------------------
