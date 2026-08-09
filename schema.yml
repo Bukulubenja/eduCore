@@ -1349,6 +1349,36 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/report-cards/{report_card_id}/document:
+    get:
+      operationId: report_cards_document_retrieve
+      description: |-
+        Streams the rendered PDF for one report card.
+
+        Same eligibility rule as `ReportCardListView`: a guardian may only reach a
+        document for a *verified* ward with portal access. A 404 rather than 403
+        for an ineligible caller, so the response does not confirm the report
+        card exists at all (doc 06, threat 5).
+      parameters:
+      - in: path
+        name: report_card_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - report-cards
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/report-cards/generate:
     post:
       operationId: report_cards_generate_create

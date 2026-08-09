@@ -11,6 +11,7 @@ from educore.core import audit, mfa
 from educore.core.models import OutboxMessage
 from educore.students.models import Enrolment, GuardianLink, Student
 
+from . import rendering
 from .models import (
     Assessment,
     AssessmentState,
@@ -366,6 +367,8 @@ def generate_report_card(*, student: Student, term, actor=None) -> ReportCard:
             "subjects": list(subjects.values()),
         },
     )
+
+    rendering.attach_pdf(report)
 
     audit.record(action="assessment.report_card.issued",
                  object_type="assessment.ReportCard", object_id=report.id,

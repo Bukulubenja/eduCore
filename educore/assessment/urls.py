@@ -27,6 +27,8 @@ urlpatterns = [
     path("report-cards", views.ReportCardListView.as_view(), name="report-cards"),
     path("report-cards/generate", views.GenerateReportCardsView.as_view(),
          name="generate-report-cards"),
+    path("report-cards/<uuid:report_card_id>/document",
+         views.ReportCardDocumentView.as_view(), name="report-card-document"),
     path("me/results", views.MyResultsView.as_view(), name="my-results"),
     path("students", views.StudentLookupView.as_view(), name="student-lookup"),
 ]

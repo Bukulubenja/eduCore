@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from django.http import FileResponse
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -269,6 +270,49 @@ class ReportCardListView(APIView):
              "supersedes": str(r.supersedes_id) if r.supersedes_id else None}
             for r in qs.order_by("-issued_at")[:100]
         ]})
+
+
+class ReportCardDocumentView(APIView):
+    """Streams the rendered PDF for one report card.
+
+    Same eligibility rule as `ReportCardListView`: a guardian may only reach a
+    document for a *verified* ward with portal access. A 404 rather than 403
+    for an ineligible caller, so the response does not confirm the report
+    card exists at all (doc 06, threat 5).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    def get(self, request, report_card_id):
+        membership = _membership(request)
+        roles = _roles(membership)
+
+        report = (ReportCard.objects.select_related("student")
+                  .filter(pk=report_card_id).first())
+        if report is None:
+            raise ProblemError("Report card not found.", "report-card-not-found",
+                               status.HTTP_404_NOT_FOUND)
+
+        if not (roles & MODERATOR_ROLES):
+            is_ward = GuardianLink.objects.filter(
+                membership=membership, student_id=report.student_id,
+                verified=True, has_portal_access=True,
+            ).exists()
+            if not is_ward:
+                raise ProblemError("Report card not found.",
+                                   "report-card-not-found",
+                                   status.HTTP_404_NOT_FOUND)
+
+        if not report.document:
+            raise ProblemError("This report card has no rendered document.",
+                               "document-not-available",
+                               status.HTTP_404_NOT_FOUND)
+
+        filename = (f"report-card-{report.student.admission_number}"
+                   f"-r{report.revision}.pdf")
+        return FileResponse(report.document.open("rb"),
+                            content_type="application/pdf", filename=filename)
 
 
 class GenerateReportCardsSerializer(serializers.Serializer):

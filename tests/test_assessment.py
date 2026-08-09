@@ -452,3 +452,15 @@ def test_the_pdf_renders_from_the_snapshot_not_live_data(school_a, released,
 
     assert pdf.startswith(b"%PDF")
     assert report.document.name.endswith(".pdf")
+
+
+def test_issuing_a_report_card_attaches_its_pdf_without_a_separate_call(
+        school_a, released, students, term, head):
+    """Nobody issuing a report card should have to remember a second step for
+    a parent to actually receive a document."""
+    with TenantContext.scope(school_a):
+        report = services.generate_report_card(student=students[0], term=term,
+                                               actor=head)
+
+    assert report.document.name.endswith(".pdf")
+    assert report.document.read().startswith(b"%PDF")

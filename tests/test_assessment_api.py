@@ -11,7 +11,12 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from educore.assessment import services
-from educore.assessment.models import Assessment, AssessmentState, GradingScale
+from educore.assessment.models import (
+    Assessment,
+    AssessmentState,
+    GradingScale,
+    ReportCard,
+)
 from educore.core import mfa
 from educore.core.tenancy import TenantContext
 from educore.students.models import GuardianLink
@@ -334,3 +339,47 @@ def test_a_teacher_cannot_issue_report_cards(school_a, class_group, term,
         format="json",
     )
     assert response.status_code == 403
+
+
+def test_a_guardian_can_download_their_wards_report_card_pdf(
+        school_a, released, students, class_group, term, dos, make_membership):
+    client_for(dos).post(
+        reverse("v1:assessment:generate-report-cards"),
+        {"class_group_id": str(class_group.id), "term_id": str(term.id)},
+        format="json",
+    )
+
+    parent = make_membership(school_a, email="parent3@example.com")
+    with TenantContext.scope(school_a):
+        GuardianLink.objects.create(
+            school_id=school_a.id, student=students[0], membership=parent,
+            relationship=GuardianLink.Relationship.MOTHER, verified=True,
+        )
+        report = ReportCard.objects.get(student=students[0], term=term)
+
+    response = client_for(parent).get(
+        reverse("v1:assessment:report-card-document", args=[report.id]))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert b"".join(response.streaming_content).startswith(b"%PDF")
+
+
+def test_a_stranger_cannot_download_a_report_card_pdf(
+        school_a, released, students, class_group, term, dos, make_membership):
+    """A 404, not a 403 -- the response must not confirm the report card
+    exists to someone with no claim on it."""
+    client_for(dos).post(
+        reverse("v1:assessment:generate-report-cards"),
+        {"class_group_id": str(class_group.id), "term_id": str(term.id)},
+        format="json",
+    )
+
+    stranger = make_membership(school_a, email="stranger2@example.com")
+    with TenantContext.scope(school_a):
+        report = ReportCard.objects.get(student=students[0], term=term)
+
+    response = client_for(stranger).get(
+        reverse("v1:assessment:report-card-document", args=[report.id]))
+
+    assert response.status_code == 404
