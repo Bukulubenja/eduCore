@@ -9,13 +9,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from educore.academics.models import Term
+from educore.academics.models import StaffProfile, Term
 from educore.core import signed_tokens
 from educore.core.views import ProblemError
 from educore.timetable.models import LessonInstance, Room
 
 from . import services
 from .models import CoverageEntry, LessonSession, SchemeOfWork
+
+# Whoever holds one of these can see coverage for any department, or none
+# (school-wide). Everyone else's view of `department_id` is either absent
+# (unrestricted, matching this endpoint's long-standing open access) or, for
+# a head of department, pinned to their own.
+LEADERSHIP_ROLES = {"director", "head_teacher", "deputy", "dos"}
 
 
 def _membership(request):
@@ -24,6 +30,43 @@ def _membership(request):
         raise ProblemError("No active school membership for this session.",
                            "no-active-membership", status.HTTP_403_FORBIDDEN)
     return membership
+
+
+def _roles(membership) -> set[str]:
+    today = timezone.localdate()
+    return {ra.role.code for ra in membership.role_assignments.select_related("role")
+            if ra.is_valid_on(today)}
+
+
+def _resolve_department_scope(request, membership):
+    """Work out the `department_id` this caller's coverage view is scoped to.
+
+    Returns `(department_id, pinned)`: `department_id` is what to filter on
+    (`None` for school-wide), and `pinned` is the HOD's own department when
+    they may not see past it -- used to also guard a direct `scheme_id`
+    lookup, not just the `schemes_behind` listing.
+    """
+    requested = request.query_params.get("department_id")
+    roles = _roles(membership)
+    if roles & LEADERSHIP_ROLES:
+        return requested or None, None
+
+    if "hod" in roles:
+        own_department_id = (
+            StaffProfile.objects.filter(membership=membership)
+            .values_list("department_id", flat=True).first()
+        )
+        if own_department_id is None:
+            raise ProblemError("You are not assigned to a department.",
+                               "no-department", status.HTTP_403_FORBIDDEN)
+        if requested and str(requested) != str(own_department_id):
+            raise ProblemError("You may not view another department's coverage.",
+                               "not-permitted", status.HTTP_403_FORBIDDEN)
+        return str(own_department_id), own_department_id
+
+    # Nobody else's access has ever been narrowed here -- a plain filter, not
+    # a new capability, since this endpoint has no role gate.
+    return requested or None, None
 
 
 class OpenSessionSerializer(serializers.Serializer):
@@ -186,7 +229,10 @@ class CoverageView(APIView):
 
     @extend_schema(responses=dict)
     def get(self, request):
-        _membership(request)
+        membership = _membership(request)
+        department_id, pinned_department_id = _resolve_department_scope(
+            request, membership
+        )
         term_id = request.query_params.get("term_id")
         term = (Term.objects.filter(pk=term_id).first() if term_id
                 else Term.objects.filter(is_current=True).first())
@@ -198,17 +244,22 @@ class CoverageView(APIView):
         group_id = request.query_params.get("class_group_id")
 
         if scheme_id:
-            scheme = SchemeOfWork.objects.filter(pk=scheme_id).first()
-            if scheme is None:
+            scheme = (SchemeOfWork.objects.select_related("course__subject")
+                      .filter(pk=scheme_id).first())
+            if scheme is None or (
+                pinned_department_id is not None
+                and scheme.course.subject.department_id != pinned_department_id
+            ):
                 raise ProblemError("Scheme not found.", "scheme-not-found",
                                    status.HTTP_404_NOT_FOUND)
             reports = [services.coverage_report(scheme=scheme,
                                                 class_group=group_id)]
         else:
-            reports = services.schemes_behind(term=term)
+            reports = services.schemes_behind(term=term, department_id=department_id)
 
         return Response({
             "term_id": str(term.id),
+            "department_id": department_id,
             "results": [
                 {
                     "scheme_id": str(r.scheme_id),

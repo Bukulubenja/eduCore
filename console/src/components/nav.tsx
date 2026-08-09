@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/review", label: "Review" },
   { href: "/results", label: "Results" },
   { href: "/coverage", label: "Coverage" },
+  { href: "/hod", label: "My department" },
   { href: "/at-risk", label: "At risk" },
   { href: "/policy", label: "Policy" },
 ];
