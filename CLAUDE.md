@@ -1,7 +1,11 @@
 # eduCore
 
 Multi-tenant school-operations SaaS. Modular monolith: Django 5 + DRF backend
-(`educore/`), Next.js console (`console/`), Flutter mobile (planned).
+(`educore/`), Next.js console (`console/`). No native mobile app — client
+strategy is web-only, including an installable offline-capable PWA for staff
+check-in/out (superseding the earlier Flutter plan referenced in
+`docs/07-delivery-plan.md`; that doc's "Mobile app" bullets should be read as
+"PWA" going forward).
 Design is authoritative in [`docs/`](docs/README.md) — read it before making
 architectural changes, especially [ADR-0001 tenancy](docs/adr/0001-tenancy-model.md)
 and [ADR-0005 modular monolith](docs/adr/0005-modular-monolith.md).
