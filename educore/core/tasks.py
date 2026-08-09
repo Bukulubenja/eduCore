@@ -24,6 +24,7 @@ SCHEDULABLE = {
     "roll_timetable",
     "verify_audit_chains",
     "estate_report",
+    "alert_staff_absences",
 }
 
 

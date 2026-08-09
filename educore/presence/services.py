@@ -18,6 +18,7 @@ from django.utils import timezone
 from educore.core import audit
 from educore.core.models import Campus, Device, Membership, OutboxMessage
 from educore.core.tenancy import TenantContext
+from educore.timetable.models import CalendarException
 
 from . import qr
 from .confidence import score
@@ -455,3 +456,110 @@ def health_metrics(*, since, until) -> dict:
         "upheld_rate": round(upheld / total, 4) if total else 0.0,
         "upheld_rate_exceeded": bool(total and upheld / total > 0.02),
     }
+
+
+# -- Staff absence alert ------------------------------------------------------
+#
+# Everything above this line answers "what happened". This answers "what
+# didn't" -- the one case an append-only event log cannot represent, because
+# there is no event for a check-in that never arrived. Nothing is stored: the
+# answer is recomputed from the roster and the day's events every time this
+# runs, the same way an AttendanceRecord is recomputed rather than kept as a
+# mutable flag.
+
+# Roles that hold a Membership but are never expected to check in for duty.
+# Mirrors the "expected_staff" filter in insights.services.today() and
+# platform.services.meter_school() -- presence may not import either (both
+# sit above it in the layering), so the filter is repeated rather than shared.
+_NON_STAFF_ROLE_CODES = ["parent", "student"]
+
+
+def _checkin_window_elapsed(policy: AttendancePolicy, date, now) -> bool:
+    """Has enough of the day passed to call a no-show an absence, not a delay?
+
+    Late arrivals are routine and already handled by `AttendanceStatus.LATE`;
+    this alert is about someone who was never seen at all, so it waits well
+    past the ordinary grace period before saying so.
+    """
+    from datetime import datetime
+
+    from django.conf import settings
+
+    grace_minutes = getattr(settings, "STAFF_ABSENCE_ALERT_GRACE_MINUTES", 120)
+    tz = timezone.get_current_timezone()
+    deadline = (
+        datetime.combine(date, policy.day_starts_at, tzinfo=tz)
+        + timedelta(minutes=policy.late_grace_minutes + grace_minutes)
+    )
+    return now >= deadline
+
+
+def _is_non_working_day(date) -> bool:
+    """A day school itself declared closed. Exam days and events still count."""
+    return CalendarException.objects.filter(
+        date=date,
+        suppresses_lessons=True,
+        kind__in=[CalendarException.Kind.HOLIDAY, CalendarException.Kind.CLOSURE],
+    ).exists()
+
+
+def detect_staff_absences(*, date=None, now=None) -> list[Membership]:
+    """Staff expected on duty today who have no check-in event at all.
+
+    Not "disposition is ABSENT" -- that status also covers a rejected event
+    (someone tried and failed the checks), which is a review-queue problem,
+    not a no-show. This is stricter: nobody heard from them at all.
+    """
+    school_id = TenantContext.require()
+    now = now or timezone.now()
+    date = date or timezone.localtime(now).date()
+
+    if _is_non_working_day(date):
+        return []
+
+    policy = active_policy(school_id)
+    if not _checkin_window_elapsed(policy, date, now):
+        return []
+
+    expected = (
+        Membership.objects.filter(status=Membership.Status.ACTIVE)
+        .exclude(role_assignments__role__code__in=_NON_STAFF_ROLE_CODES)
+        .distinct()
+    )
+    checked_in = set(
+        AttendanceEvent.objects.filter(
+            captured_at__date=date, kind=AttendanceEvent.Kind.CHECK_IN,
+        )
+        .values_list("membership_id", flat=True)
+        .distinct()
+    )
+    return [m for m in expected if m.pk not in checked_in]
+
+
+def raise_absence_alerts(*, date=None, now=None) -> int:
+    """Publish one leadership alert naming everyone who never checked in.
+
+    Safe to call as often as the scheduler likes: `comms` dedupes deliveries
+    on `(topic, date)` per recipient (see `comms.handlers`), so a beat job
+    that reruns every few minutes while people are still missing produces one
+    notification, not a stream of identical ones. Presence has no way to know
+    whether that notification already went out -- `comms` is a leaf module
+    nothing upstream may import -- so the dedupe has to live on that side.
+    """
+    school_id = TenantContext.require()
+    now = now or timezone.now()
+    date = date or timezone.localtime(now).date()
+
+    absent = detect_staff_absences(date=date, now=now)
+    if not absent:
+        return 0
+
+    OutboxMessage.objects.create(
+        school_id=school_id,
+        topic="presence.staff_absence.detected",
+        payload={
+            "date": str(date),
+            "members": [{"membership_id": str(m.pk)} for m in absent],
+        },
+    )
+    return len(absent)

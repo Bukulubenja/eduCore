@@ -206,6 +206,12 @@ CELERY_BEAT_SCHEDULE = {
         "args": ("estate_report",),
         "options": {"queue": "reports"},
     },
+    "alert-staff-absences": {
+        "task": "educore.core.tasks.run_command",
+        "schedule": 300.0,
+        "args": ("alert_staff_absences",),
+        "options": {"queue": "notify", "expires": 280},
+    },
 }
 
 # -- Domain policy defaults --------------------------------------------------
@@ -217,6 +223,11 @@ ATTENDANCE_DEFAULT_REVIEW = 45
 ATTENDANCE_MIN_EVIDENCE_WEIGHT = 40
 ATTENDANCE_MAX_CLOCK_SKEW_SECONDS = 300
 SYNC_MAX_BACKDATE_DAYS = 14
+
+# Minutes after a school's duty-start time (plus its own late-arrival grace)
+# before a staff member with no check-in event becomes a leadership alert
+# rather than just "not in yet". See alert_staff_absences.
+STAFF_ABSENCE_ALERT_GRACE_MINUTES = 120
 
 # -- Logging -----------------------------------------------------------------
 
