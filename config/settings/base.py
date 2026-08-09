@@ -20,6 +20,11 @@ SECRET_KEY = env("SECRET_KEY", default="insecure-development-key-override-me")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
+# Base URL of the Next.js console. Used only to build the link inside an
+# invite email (educore/core/invites.py) -- never trusted as input, never
+# used for anything security-sensitive itself.
+CONSOLE_BASE_URL = env("CONSOLE_BASE_URL", default="http://localhost:3000")
+
 # -- Applications ------------------------------------------------------------
 
 DJANGO_APPS = [

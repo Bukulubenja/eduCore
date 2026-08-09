@@ -13,12 +13,17 @@ import { REFRESH_COOKIE } from "@/lib/session";
  * authorisation decision. Every real check happens server-side in the API,
  * which re-evaluates permissions against the database on every request.
  */
+// Reachable with no session, same as /login: a freshly-imported or
+// newly-provisioned account has no way to sign in until it has been through
+// this page, so it cannot be gated behind the very session it is issuing.
+const PUBLIC_PATHS = new Set(["/login", "/accept-invite"]);
+
 export function proxy(request: NextRequest) {
   const signedIn = Boolean(request.cookies.get(REFRESH_COOKIE)?.value);
   const { pathname, search } = request.nextUrl;
-  const onLoginPage = pathname === "/login";
+  const onPublicPage = PUBLIC_PATHS.has(pathname);
 
-  if (!signedIn && !onLoginPage) {
+  if (!signedIn && !onPublicPage) {
     const url = new URL("/login", request.url);
     if (pathname !== "/") {
       url.searchParams.set("next", `${pathname}${search}`);
@@ -26,7 +31,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (signedIn && onLoginPage) {
+  if (signedIn && onPublicPage) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

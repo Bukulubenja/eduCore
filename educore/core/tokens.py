@@ -23,6 +23,11 @@ from django.utils import timezone
 ALGORITHM = "HS256"
 ACCESS_TTL = timedelta(minutes=15)
 REFRESH_TTL = timedelta(days=30)
+# Days, not the minutes/30-day scale above: account setup is not a session.
+# A staff member imported on a Friday should not find their invite dead by
+# the time they open the email on Monday, but a link forgotten for a term
+# should not still work either.
+INVITE_TTL = timedelta(days=7)
 
 
 class TokenError(Exception):
@@ -39,6 +44,31 @@ class TokenInvalidError(TokenError):
 
 class RefreshReuseDetectedError(TokenError):
     """A consumed refresh token was presented again. Treated as compromise."""
+
+
+class InviteTokenError(TokenError):
+    """Base class for invite-token failures.
+
+    Deliberately one family of exception for "does not exist", "expired" and
+    "already used": the accept-invite endpoint renders all three identically,
+    so nothing here should tempt a caller into leaking the distinction.
+    """
+
+
+class InviteTokenInvalidError(InviteTokenError):
+    pass
+
+
+class InviteTokenExpiredError(InviteTokenError):
+    pass
+
+
+class InvitePasswordInvalidError(InviteTokenError):
+    """The token was fine; the chosen password failed Django's validators."""
+
+    def __init__(self, messages: list[str]):
+        self.messages = messages
+        super().__init__("; ".join(messages))
 
 
 def _signing_key() -> str:
@@ -167,3 +197,106 @@ def revoke_family(family_id) -> int:
     return RefreshToken.all_tenants.filter(
         family_id=family_id, revoked_at__isnull=True
     ).update(revoked_at=timezone.now())
+
+
+# -- Invite tokens -------------------------------------------------------
+
+
+def issue_invite(membership, *, ttl: timedelta = INVITE_TTL):
+    """Mint an invite token for `membership`. Returns (raw_token, model instance).
+
+    Same discipline as `issue_refresh`: the raw value is returned once and
+    never stored -- only its hash is kept, so a database leak does not hand
+    over a way to activate anyone's account.
+    """
+    from .models import InviteToken
+    from .tenancy import TenantContext
+
+    raw = secrets.token_urlsafe(32)
+    with TenantContext.scope(membership.school_id):
+        token = InviteToken.objects.create(
+            school_id=membership.school_id,
+            membership=membership,
+            token_hash=hash_refresh(raw),
+            expires_at=timezone.now() + ttl,
+        )
+    return raw, token
+
+
+def invite_is_live(raw: str) -> bool:
+    """Whether a token would currently be accepted, without consuming it.
+
+    Backs the console's pre-flight check (GET .../accept-invite?token=...) so
+    an expired or already-used link can show a sensible message before anyone
+    fills in a password. Returns False uniformly for "never existed",
+    "expired" and "already used" -- same anti-enumeration discipline as
+    `accept_invite` below.
+    """
+    from .models import InviteToken
+
+    token = InviteToken.all_tenants.filter(token_hash=hash_refresh(raw)).first()
+    return bool(token and token.is_live)
+
+
+def accept_invite(raw: str, password: str):
+    """Redeem an invite token: set the password, activate the membership.
+
+    Returns the now-active Membership. Mirrors `rotate_refresh`'s
+    `select_for_update()` discipline: two requests racing to redeem the same
+    token -- the same link opened twice, or an attacker replaying a leaked
+    link at the same moment as its real recipient -- read-then-write
+    `consumed_at`, and without the row lock both can observe "not yet
+    consumed" before either commits, letting both activate the account. The
+    lock forces the second caller to wait for the first to finish and then
+    see it already consumed, so exactly one of them ever succeeds.
+    """
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError as DjangoValidationError
+
+    from .models import InviteToken, Membership
+    from .tenancy import TenantContext
+
+    with transaction.atomic():
+        token = (
+            InviteToken.all_tenants.select_for_update()
+            .select_related("membership", "membership__user")
+            .filter(token_hash=hash_refresh(raw))
+            .first()
+        )
+        # "Never existed" and "already used" are folded into one error so an
+        # attacker probing tokens cannot tell a dead link from a live one
+        # that belongs to someone else.
+        if token is None or token.consumed_at is not None:
+            raise InviteTokenInvalidError("invite token is not valid")
+        if token.expires_at <= timezone.now():
+            raise InviteTokenExpiredError("invite token has expired")
+
+        membership = token.membership
+        user = membership.user
+
+        try:
+            validate_password(password, user=user)
+        except DjangoValidationError as exc:
+            raise InvitePasswordInvalidError(exc.messages) from exc
+
+        user.set_password(password)
+        user.save(update_fields=["password"])
+
+        membership.status = Membership.Status.ACTIVE
+        membership.save(update_fields=["status", "updated_at"])
+
+        token.consumed_at = timezone.now()
+        token.save(update_fields=["consumed_at", "updated_at"])
+
+        with TenantContext.scope(membership.school_id):
+            from . import audit
+
+            audit.record(
+                action="core.membership.activated",
+                object_type="core.Membership",
+                object_id=membership.id,
+                actor_membership=membership,
+                after={"status": membership.status},
+            )
+
+    return membership

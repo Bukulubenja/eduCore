@@ -289,6 +289,36 @@ class RefreshToken(TenantOwnedModel):
                 and self.expires_at > timezone.now())
 
 
+class InviteToken(TenantOwnedModel):
+    """A single-use token that lets a newly created Membership set a password.
+
+    Same hashed-at-rest, single-use shape as `RefreshToken` above, but scoped
+    to onboarding rather than a session: issued once when a Membership is
+    created `INVITED` (by `provision_school`'s first administrator or the
+    staff/guardian bulk importers -- see `educore/core/invites.py`) and
+    consumed once, by `core.tokens.accept_invite`, to set a password and
+    activate the membership.
+    """
+
+    membership = models.ForeignKey(Membership, on_delete=models.CASCADE,
+                                   related_name="invite_tokens")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta(TenantOwnedModel.Meta):
+        db_table = "core_invitetoken"
+        constraints = TenantOwnedModel.tenant_constraints("core_invitetoken")
+        indexes = [
+            models.Index(fields=["membership", "expires_at"],
+                         name="core_invite_member_idx"),
+        ]
+
+    @property
+    def is_live(self) -> bool:
+        return self.consumed_at is None and self.expires_at > timezone.now()
+
+
 class StepUpGrant(TenantOwnedModel):
     """Proof that someone re-authenticated moments ago.
 
