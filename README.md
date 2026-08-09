@@ -94,6 +94,7 @@ Or individually:
 ```bash
 .venv/Scripts/python -m pytest              # tests
 .venv/Scripts/python -m ruff check .        # lint
+.venv/Scripts/python -m bandit -r educore/  # security scan (SAST)
 .venv/Scripts/lint-imports                  # module boundaries (ADR-0005)
 .venv/Scripts/python manage.py check --deploy
 .venv/Scripts/python manage.py spectacular --file schema.yml   # regenerate contract

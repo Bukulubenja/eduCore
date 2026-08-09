@@ -102,8 +102,9 @@ class PushChannel(ConsoleChannel):
     code = "push"
 
     def address_for(self, membership) -> str:
+        # Queryset filter value, not a credential.
         device = membership.devices.filter(status="active").exclude(
-            push_token=""
+            push_token=""  # nosec B106
         ).first()
         return device.push_token if device else ""
 

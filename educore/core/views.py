@@ -118,7 +118,8 @@ class TokenRefreshView(APIView):
         return Response({
             "access_token": access,
             "refresh_token": new_refresh,
-            "token_type": "Bearer",
+            # OAuth2 token-type label, not a credential.
+            "token_type": "Bearer",  # nosec B105
             "expires_in": expires_in,
         })
 
@@ -254,7 +255,8 @@ def _token_response(membership) -> dict:
     return {
         "access_token": access,
         "refresh_token": raw_refresh,
-        "token_type": "Bearer",
+        # OAuth2 token-type label, not a credential.
+        "token_type": "Bearer",  # nosec B105
         "expires_in": expires_in,
         "membership_id": str(membership.pk),
         "school_id": str(membership.school_id),
