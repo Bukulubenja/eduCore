@@ -107,6 +107,37 @@ class CheckOutView(CheckInView):
     kind = AttendanceEvent.Kind.CHECK_OUT
 
 
+class CampusListView(APIView):
+    """Every campus the caller's school has, for the check-in client to pick
+    from.
+
+    Presence used to resolve a caller's campus once, silently, to the
+    school's primary campus (`resolve_campus_id` in `console/src/lib/checkin
+    /campus.ts`), and cache that choice in the browser indefinitely. A staff
+    member at a second campus had no way to correct that and no indication
+    it was even wrong -- they would simply score as absent, every day,
+    against a fence they were never inside (doc 01, principle 6: symmetric
+    visibility). Letting the client list campuses and show which one is
+    selected is the fix; there is deliberately no per-staff "home campus" on
+    the data model to get out of sync with reality -- a person chooses where
+    they are, same as the system already lets them submit a check-in from
+    anywhere within the fence.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=dict)
+    def get(self, request):
+        membership = _membership(request)
+        campuses = Campus.objects.filter(school_id=membership.school_id).order_by(
+            "-is_primary", "name"
+        )
+        return Response({"results": [
+            {"id": str(c.id), "name": c.name, "is_primary": c.is_primary}
+            for c in campuses
+        ]})
+
+
 class QrTokenView(APIView):
     """Issue a rotating code for a display device in the staff room."""
 

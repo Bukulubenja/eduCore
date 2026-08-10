@@ -465,6 +465,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Assessment'
           description: ''
+  /api/v1/attendance/campuses:
+    get:
+      operationId: attendance_campuses_retrieve
+      description: |-
+        Every campus the caller's school has, for the check-in client to pick
+        from.
+
+        Presence used to resolve a caller's campus once, silently, to the
+        school's primary campus (`resolve_campus_id` in `console/src/lib/checkin
+        /campus.ts`), and cache that choice in the browser indefinitely. A staff
+        member at a second campus had no way to correct that and no indication
+        it was even wrong -- they would simply score as absent, every day,
+        against a fence they were never inside (doc 01, principle 6: symmetric
+        visibility). Letting the client list campuses and show which one is
+        selected is the fix; there is deliberately no per-staff "home campus" on
+        the data model to get out of sync with reality -- a person chooses where
+        they are, same as the system already lets them submit a check-in from
+        anywhere within the fence.
+      tags:
+      - attendance
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/attendance/check-in:
     post:
       operationId: attendance_check_in_create

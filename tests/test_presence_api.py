@@ -47,6 +47,18 @@ def dos_api(dos, policy):
     return client_for(dos)
 
 
+def test_campus_list_returns_every_campus_for_the_school(
+        school_a, teacher_api, campus):
+    """Any authenticated staff member can see the school's campuses -- this
+    is what lets the check-in client show, not silently assume, which one a
+    submission will count against."""
+    response = teacher_api.get(reverse("v1:presence:campuses"))
+
+    assert response.status_code == 200
+    ids = {c["id"] for c in response.data["results"]}
+    assert str(campus.id) in ids
+
+
 def check_in_body(campus, at, signals):
     return {
         "client_event_id": str(uuid.uuid4()),

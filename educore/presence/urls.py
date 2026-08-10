@@ -8,6 +8,7 @@ urlpatterns = [
     path("attendance/check-in", views.CheckInView.as_view(), name="check-in"),
     path("attendance/check-out", views.CheckOutView.as_view(), name="check-out"),
     path("attendance/qr-token", views.QrTokenView.as_view(), name="qr-token"),
+    path("attendance/campuses", views.CampusListView.as_view(), name="campuses"),
     path("attendance/records", views.AttendanceRecordListView.as_view(),
          name="records"),
     path("attendance/records/<uuid:record_id>/appeal", views.AppealView.as_view(),

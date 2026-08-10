@@ -6,7 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { QrCapture } from "@/components/checkin/qr-capture";
 import { StatusCard } from "@/components/checkin/status-card";
-import { cachedCampusId, resolveCampusId } from "@/lib/checkin/campus";
+import {
+  cachedCampusId,
+  resolveCampusId,
+  setCachedCampusId,
+  type Campus,
+} from "@/lib/checkin/campus";
 import { captureGeofence } from "@/lib/checkin/geolocation";
 import { submitCheck } from "@/lib/checkin/submit";
 import type { Signals, SubmissionOutcome } from "@/lib/checkin/types";
@@ -26,6 +31,8 @@ type ScannedCode = { token: string; capturedAt: number };
 
 export default function CheckinPage() {
   const [campusId, setCampusId] = useState<string | null>(cachedCampusId());
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [pickingCampus, setPickingCampus] = useState(false);
   const [campusError, setCampusError] = useState("");
   const [geo, setGeo] = useState<Signals["geofence"] | null>(null);
   const [qr, setQr] = useState<ScannedCode | null>(null);
@@ -39,7 +46,10 @@ export default function CheckinPage() {
   // the tap would make the one-tap check-in feel like anything but.
   useEffect(() => {
     resolveCampusId()
-      .then(setCampusId)
+      .then(({ campusId: resolved, campuses: list }) => {
+        setCampusId(resolved);
+        setCampuses(list);
+      })
       .catch(() => {
         if (!cachedCampusId()) {
           setCampusError(
@@ -49,6 +59,14 @@ export default function CheckinPage() {
       });
     captureGeofence().then(setGeo);
   }, []);
+
+  const campus = campuses.find((c) => c.id === campusId);
+
+  function chooseCampus(id: string) {
+    setCampusId(id);
+    setCachedCampusId(id);
+    setPickingCampus(false);
+  }
 
   // Keep the QR chip's age live so a stale code visibly expires rather than
   // silently being dropped from the next submission with no explanation.
@@ -87,6 +105,41 @@ export default function CheckinPage() {
           Check in
         </h1>
       </header>
+
+      {campus && (
+        <div className="flex items-center justify-between rounded-md border border-rule bg-card px-3.5 py-2.5 text-sm">
+          <span>
+            Checking in at <span className="font-medium">{campus.name}</span>
+          </span>
+          {campuses.length > 1 && (
+            <button
+              onClick={() => setPickingCampus((v) => !v)}
+              className="text-xs font-medium text-signal underline"
+            >
+              Change
+            </button>
+          )}
+        </div>
+      )}
+
+      {pickingCampus && (
+        <ul className="space-y-1.5 rounded-lg border border-rule bg-card p-2">
+          {campuses.map((c) => (
+            <li key={c.id}>
+              <button
+                onClick={() => chooseCampus(c.id)}
+                className={`block w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  c.id === campusId
+                    ? "bg-signal-soft font-medium text-signal"
+                    : "text-ink hover:bg-paper"
+                }`}
+              >
+                {c.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {pending > 0 && (
         <div className="flex items-center justify-between rounded-md border border-signal/70 bg-signal-soft px-3.5 py-2.5 text-xs text-signal">
