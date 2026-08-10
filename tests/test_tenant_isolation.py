@@ -256,6 +256,14 @@ def test_audit_chain_detects_tampering(school_a):
     the trigger for the simulated attack, then restoring it -- exactly
     the DBA-level access an attacker who could tamper undetected would
     need anyway.
+
+    `ALTER TABLE ... DISABLE TRIGGER` cannot be used here: pytest-django
+    runs each test inside a transaction, and Postgres refuses to ALTER a
+    relation that already has pending trigger events earlier in that same
+    transaction (the two audit.record() inserts above). `session_replication_
+    role` sidesteps this -- it is a session-level GUC, not a catalog change,
+    so it does not conflict with pending events and (via SET LOCAL) reverts
+    on its own when the test's transaction ends.
     """
     from educore.core import audit
 
@@ -268,8 +276,7 @@ def test_audit_chain_detects_tampering(school_a):
     is_postgres = connection.vendor == "postgresql"
     if is_postgres:
         with connection.cursor() as cursor:
-            cursor.execute("ALTER TABLE core_auditevent "
-                          "DISABLE TRIGGER core_auditevent_append_only")
+            cursor.execute("SET LOCAL session_replication_role = replica")
     try:
         AuditEvent.all_tenants.filter(school=school_a, sequence=1).update(
             after={"score": 95}
@@ -277,8 +284,7 @@ def test_audit_chain_detects_tampering(school_a):
     finally:
         if is_postgres:
             with connection.cursor() as cursor:
-                cursor.execute("ALTER TABLE core_auditevent "
-                              "ENABLE TRIGGER core_auditevent_append_only")
+                cursor.execute("SET LOCAL session_replication_role = DEFAULT")
 
     breaks = audit.verify_chain(school_a.id)
     reasons = {b["reason"] for b in breaks}
