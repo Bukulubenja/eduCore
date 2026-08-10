@@ -19,7 +19,9 @@ def encrypt_existing_secrets(apps, schema_editor):
     from educore.core.crypto import encrypt
 
     User = apps.get_model("core", "User")
-    for user in User.objects.exclude(mfa_secret="").iterator():
+    # nosec B106 -- bandit misreads this queryset filter as a hardcoded
+    # password argument; it's an empty-string exclusion, not a credential.
+    for user in User.objects.exclude(mfa_secret="").iterator():  # nosec B106
         user.mfa_secret = encrypt(user.mfa_secret)
         user.save(update_fields=["mfa_secret"])
 
@@ -31,7 +33,7 @@ def decrypt_existing_secrets(apps, schema_editor):
     from educore.core.crypto import decrypt
 
     User = apps.get_model("core", "User")
-    for user in User.objects.exclude(mfa_secret="").iterator():
+    for user in User.objects.exclude(mfa_secret="").iterator():  # nosec B106
         user.mfa_secret = decrypt(user.mfa_secret)
         user.save(update_fields=["mfa_secret"])
 
