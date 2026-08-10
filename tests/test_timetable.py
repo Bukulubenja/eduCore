@@ -225,9 +225,16 @@ def test_lessons_never_opened_are_marked_missed(school_a, populated_version):
 
 
 def test_a_future_lesson_is_left_alone(school_a, populated_version):
+    """close_out_missed must not depend on what wall-clock time the suite
+    happens to run at: publish() materialises today's occurrence of any
+    lesson whose weekday matches today, and that occurrence's slot can
+    already have ended by the time this test executes. Pin `now` to the
+    start of today so "missed" reflects the scenario, not the clock."""
     with TenantContext.scope(school_a):
         services.publish(populated_version)
-        result = services.close_out_missed()
+        start_of_today = timezone.now().replace(hour=0, minute=0, second=0,
+                                                 microsecond=0)
+        result = services.close_out_missed(now=start_of_today)
 
     assert result["missed"] == 0
 

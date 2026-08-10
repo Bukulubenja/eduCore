@@ -313,12 +313,18 @@ def coverage_report(*, scheme: SchemeOfWork, class_group=None,
     covered_periods = sum(u.planned_periods for u in units if u.id in completed_ids)
 
     term = scheme.term
-    instances = LessonInstance.objects.filter(
-        course_id=scheme.course_id,
-        date__gte=term.starts_on,
-        date__lte=min(as_of, term.ends_on),
-    ).exclude(status__in=[LessonInstance.Status.CANCELLED,
-                          LessonInstance.Status.EXCUSED])
+    instances = LessonInstance.objects.filter(course_id=scheme.course_id,
+                                              date__gte=term.starts_on)
+    if as_of > term.ends_on:
+        instances = instances.filter(date__lte=term.ends_on)
+    else:
+        # `as_of` marks a day boundary, not a point in time: a period
+        # scheduled for `as_of` itself has not necessarily happened yet, so
+        # it does not count as elapsed. Once the term has actually ended
+        # (branch above) that ambiguity is gone and the last day counts.
+        instances = instances.filter(date__lt=as_of)
+    instances = instances.exclude(status__in=[LessonInstance.Status.CANCELLED,
+                                              LessonInstance.Status.EXCUSED])
     if group_id is not None:
         instances = instances.filter(class_group_id=group_id)
     periods_elapsed = instances.count()

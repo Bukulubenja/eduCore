@@ -248,7 +248,15 @@ def test_audit_chain_links_and_verifies(school_a):
 
 
 def test_audit_chain_detects_tampering(school_a):
-    """Bypasses the ORM guard on purpose -- that is the threat being modelled."""
+    """Bypasses the ORM guard on purpose -- that is the threat being modelled.
+
+    On PostgreSQL the append-only trigger (0003_audit_append_only) also
+    blocks this UPDATE by design, so proving verify_chain() would still
+    catch a tamper that happened despite the trigger requires disabling
+    the trigger for the simulated attack, then restoring it -- exactly
+    the DBA-level access an attacker who could tamper undetected would
+    need anyway.
+    """
     from educore.core import audit
 
     with TenantContext.scope(school_a):
@@ -257,9 +265,20 @@ def test_audit_chain_detects_tampering(school_a):
         audit.record(action="mark.changed", object_type="assessment.Score",
                      after={"score": 45})
 
-    AuditEvent.all_tenants.filter(school=school_a, sequence=1).update(
-        after={"score": 95}
-    )
+    is_postgres = connection.vendor == "postgresql"
+    if is_postgres:
+        with connection.cursor() as cursor:
+            cursor.execute("ALTER TABLE core_auditevent "
+                          "DISABLE TRIGGER core_auditevent_append_only")
+    try:
+        AuditEvent.all_tenants.filter(school=school_a, sequence=1).update(
+            after={"score": 95}
+        )
+    finally:
+        if is_postgres:
+            with connection.cursor() as cursor:
+                cursor.execute("ALTER TABLE core_auditevent "
+                              "ENABLE TRIGGER core_auditevent_append_only")
 
     breaks = audit.verify_chain(school_a.id)
     reasons = {b["reason"] for b in breaks}
