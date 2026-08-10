@@ -2359,29 +2359,24 @@ components:
         weights: {}
         accept_threshold:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         review_threshold:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         min_evidence_weight:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         geofence_radius_m:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         geofence_trusted_accuracy_m:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         day_starts_at:
           type: string
           format: time
@@ -2390,24 +2385,20 @@ components:
           format: time
         late_grace_minutes:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         early_checkin_minutes:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         max_clock_skew_seconds:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         qr_token_ttl_seconds:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
       required:
       - id
       - is_active
@@ -2456,9 +2447,8 @@ components:
           $ref: '#/components/schemas/DispositionEnum'
         confidence:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         first_in_at:
           type: string
           format: date-time
@@ -2469,16 +2459,14 @@ components:
           nullable: true
         minutes_on_site:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         resolution:
           $ref: '#/components/schemas/ResolutionEnum'
         policy_version:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         needs_review:
           type: boolean
           readOnly: true
@@ -2594,14 +2582,12 @@ components:
           type: boolean
         late_start_minutes:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         verification_confidence:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         duration_minutes:
           type: integer
           readOnly: true

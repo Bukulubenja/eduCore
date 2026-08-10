@@ -108,6 +108,20 @@ see its `--help` for phase names and `--skip`.
 `schema.yml` is committed and CI fails if it drifts from the code. Regenerate
 it in the same commit as any API change.
 
+**Regenerate against Postgres, not the SQLite fallback.** drf-spectacular
+derives each integer field's OpenAPI `maximum`/`minimum`/`format` from the
+database column type Django would actually create --
+`PositiveSmallIntegerField`/`PositiveIntegerField` map to real fixed-width
+`smallint`/`integer` columns on Postgres, but SQLite has no such native
+types, so the same fields introspect as unbounded 64-bit integers instead.
+A `schema.yml` regenerated locally against the SQLite fallback will pass
+`manage.py spectacular --fail-on-warn` cleanly but still fail CI's "API
+schema is current" diff, because CI regenerates against the real Postgres
+service container. If you don't have Postgres available locally, treat
+`manage.py spectacular`'s local output as a syntax/warning check only, and
+verify the actual committed diff against a real CI run before assuming it's
+correct.
+
 Interactive API docs run at `/api/v1/docs/` once the server is up.
 
 ## Layout
