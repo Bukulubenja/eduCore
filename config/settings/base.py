@@ -17,6 +17,14 @@ env = environ.Env(
 environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY", default="insecure-development-key-override-me")
+# Separate from SECRET_KEY on purpose (educore/core/crypto.py) -- protects
+# encrypted-at-rest columns (User.mfa_secret) and must be rotatable on its
+# own schedule. The dev default below is fixed only so a fresh clone runs
+# without extra setup; production must override it via env.
+FIELD_ENCRYPTION_KEY = env(
+    "FIELD_ENCRYPTION_KEY",
+    default="NBbyyekox3qI5ZHmgnXJSUYeNAFvpb_9hGhSdTr5USo=",
+)
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 

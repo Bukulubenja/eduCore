@@ -15,6 +15,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from .crypto import EncryptedCharField
 from .tenancy import TenantOwnedModel, UUIDModel
 
 # -- The tenant --------------------------------------------------------------
@@ -113,8 +114,10 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     is_staff = models.BooleanField(default=False)      # Django admin / operator portal
     mfa_enabled = models.BooleanField(default=False)
     # Restricted data (doc 06): never logged, never in a lower environment,
-    # and field-level encrypted before this reaches production.
-    mfa_secret = models.CharField(max_length=64, blank=True)
+    # field-level encrypted at rest (educore/core/crypto.py). 255 chars gives
+    # comfortable headroom for a Fernet-encrypted 32-character base32 TOTP
+    # secret (~140 chars once encrypted).
+    mfa_secret = EncryptedCharField(max_length=255, blank=True)
     last_login_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = "email"

@@ -6,6 +6,7 @@ DEBUG = False
 # Length matters even here: PyJWT warns below 32 bytes for HS256, and a
 # suite full of warnings is a suite nobody reads.
 SECRET_KEY = "test-only-key-not-a-secret-padded-to-a-sane-length"
+FIELD_ENCRYPTION_KEY = "IOB2KwRWlbjpNXs2MCzcGjXKQ9E89ZtmFYuMLzN1EM4="
 ALLOWED_HOSTS = ["testserver"]
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
