@@ -13,7 +13,7 @@ APPEND_ONLY_FN = """
 CREATE OR REPLACE FUNCTION educore_reject_mutation() RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION
-        'relation % is append-only; % is not permitted',
+        'relation %% is append-only; %% is not permitted',
         TG_TABLE_NAME, TG_OP
         USING ERRCODE = 'restrict_violation';
 END;
