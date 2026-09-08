@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# Railway CLI local link (project id, service id -- per-checkout, not shared).
+.railway/
+
 .env
 db.sqlite3
 db.sqlite3-journal

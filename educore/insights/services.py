@@ -19,6 +19,7 @@ from django.utils import timezone
 from educore.assessment.models import AssessmentState, Score
 from educore.core.models import Membership
 from educore.delivery.models import LessonSession
+from educore.movement.models import PassOut, Trip
 from educore.presence.models import AttendanceRecord, AttendanceStatus, Disposition
 from educore.students.models import (
     Student,
@@ -74,6 +75,10 @@ def today(*, on=None) -> dict:
         resolution=AttendanceRecord.Resolution.AUTO,
     ).count()
 
+    now = timezone.now()
+    pass_outs_out = PassOut.objects.filter(status=PassOut.Status.DEPARTED)
+    trips_out = Trip.objects.filter(status=Trip.Status.DEPARTED)
+
     return {
         "date": str(on),
         "staff": {
@@ -95,6 +100,18 @@ def today(*, on=None) -> dict:
         "students": {
             "marked": students_marked,
             "absent": students_absent,
+        },
+        "movement": {
+            "students_off_campus": (
+                pass_outs_out.count()
+                + trips_out.aggregate(n=Count("participants"))["n"]
+            ),
+            "pass_outs_open": pass_outs_out.count(),
+            "trips_out": trips_out.count(),
+            "overdue_returns": (
+                pass_outs_out.filter(expected_return_at__lt=now).count()
+                + trips_out.filter(returns_at__lt=now).count()
+            ),
         },
     }
 

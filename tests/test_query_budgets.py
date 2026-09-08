@@ -243,6 +243,64 @@ def test_the_inbox_is_bounded(school_a, teacher):
     assert small_cost == large_cost
 
 
+# -- Movement -------------------------------------------------------------
+
+
+def test_the_pass_out_list_does_not_query_per_record(school_a, students, teacher):
+    from educore.movement.models import PassOut
+
+    api = client_for(teacher)
+
+    def _seed(n, tag):
+        with TenantContext.scope(school_a):
+            for i in range(n):
+                student = Student.objects.create(
+                    school_id=school_a.id, admission_number=f"PO{tag}{i:03d}",
+                    full_name=f"PO {tag} {i}", scan_code=f"POSC{tag}{i:03d}",
+                )
+                PassOut.objects.create(
+                    school_id=school_a.id, student=student, reason="medical",
+                    destination="Clinic", responsible_person="Parent",
+                    requested_by=teacher,
+                    expected_return_at=timezone.now() + timezone.timedelta(hours=4),
+                )
+
+    _seed(2, "s")
+    small = _query_count(lambda: api.get(reverse("v1:movement:pass-outs")))
+    _seed(15, "l")
+    large = _query_count(lambda: api.get(reverse("v1:movement:pass-outs")))
+
+    assert small == large
+
+
+def test_the_trip_list_does_not_query_per_trip(school_a, students, teacher):
+    from educore.movement import services
+
+    api = client_for(teacher)
+
+    def _seed(n):
+        with TenantContext.scope(school_a):
+            for _ in range(n):
+                trip = services.create_trip(
+                    created_by=teacher, title="T", purpose="", destination="D",
+                    departs_at=timezone.now() + timezone.timedelta(days=1),
+                    returns_at=timezone.now() + timezone.timedelta(days=1, hours=4),
+                )
+                services.set_trip_roster(
+                    trip=trip, student_ids=[s.id for s in students[:2]],
+                    supervisor_ids=[teacher.pk],
+                )
+
+    with TenantContext.scope(school_a):
+        _seed(2)
+    small = _query_count(lambda: api.get(reverse("v1:movement:trips")))
+    with TenantContext.scope(school_a):
+        _seed(12)
+    large = _query_count(lambda: api.get(reverse("v1:movement:trips")))
+
+    assert small == large
+
+
 def test_reading_a_thread_does_not_query_per_message(school_a, teacher, students,
                                                       make_membership):
     parent = make_membership(school_a, email="thread-parent@example.com",

@@ -1510,6 +1510,238 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/movement/eligible-students:
+    get:
+      operationId: movement_eligible_students_retrieve
+      description: 'Roster picker: enrolled students, optionally filtered by class
+        group.'
+      tags:
+      - movement
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/movement/off-campus:
+    get:
+      operationId: movement_off_campus_retrieve
+      tags:
+      - movement
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/pass-outs:
+    get:
+      operationId: pass_outs_list
+      tags:
+      - pass-outs
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PassOut'
+          description: ''
+    post:
+      operationId: pass_outs_create
+      tags:
+      - pass-outs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PassOutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PassOutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PassOutRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
+  /api/v1/pass-outs/{pass_out_id}:
+    get:
+      operationId: pass_outs_retrieve
+      parameters:
+      - in: path
+        name: pass_out_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pass-outs
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
+  /api/v1/pass-outs/{pass_out_id}/cancel:
+    post:
+      operationId: pass_outs_cancel_create
+      parameters:
+      - in: path
+        name: pass_out_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pass-outs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
+  /api/v1/pass-outs/{pass_out_id}/decision:
+    post:
+      operationId: pass_outs_decision_create
+      parameters:
+      - in: path
+        name: pass_out_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pass-outs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
+  /api/v1/pass-outs/{pass_out_id}/departure:
+    post:
+      operationId: pass_outs_departure_create
+      parameters:
+      - in: path
+        name: pass_out_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pass-outs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
+  /api/v1/pass-outs/{pass_out_id}/return:
+    post:
+      operationId: pass_outs_return_create
+      parameters:
+      - in: path
+        name: pass_out_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pass-outs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementTimestamp'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassOut'
+          description: ''
   /api/v1/report-cards:
     get:
       operationId: report_cards_retrieve
@@ -1817,6 +2049,261 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /api/v1/trips:
+    get:
+      operationId: trips_list
+      tags:
+      - trips
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+          description: ''
+    post:
+      operationId: trips_create
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}:
+    get:
+      operationId: trips_retrieve
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/trips/{trip_id}/cancel:
+    post:
+      operationId: trips_cancel_create
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementNote'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}/decision:
+    post:
+      operationId: trips_decision_create
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementDecision'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}/departure:
+    post:
+      operationId: trips_departure_create
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripDeparture'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripDeparture'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripDeparture'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}/return:
+    post:
+      operationId: trips_return_create
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripReturn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripReturn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripReturn'
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}/roster:
+    put:
+      operationId: trips_roster_update
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripRoster'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripRoster'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripRoster'
+        required: true
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/v1/trips/{trip_id}/submit:
+    post:
+      operationId: trips_submit_create
+      parameters:
+      - in: path
+        name: trip_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - trips
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
           description: ''
 components:
   schemas:
@@ -2250,6 +2737,26 @@ components:
           maxLength: 10
       required:
       - code
+    MovementDecision:
+      type: object
+      properties:
+        approved:
+          type: boolean
+        note:
+          type: string
+      required:
+      - approved
+    MovementNote:
+      type: object
+      properties:
+        note:
+          type: string
+    MovementTimestamp:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
     OpenSession:
       type: object
       properties:
@@ -2336,6 +2843,110 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Record'
+    PassOut:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        student:
+          type: string
+          format: uuid
+        reason:
+          $ref: '#/components/schemas/ReasonEnum'
+        destination:
+          type: string
+          maxLength: 200
+        responsible_person:
+          type: string
+          maxLength: 200
+        narrative:
+          type: string
+        requested_by:
+          type: string
+          format: uuid
+        expected_return_at:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/PassOutStatusEnum'
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+        decision_note:
+          type: string
+        departed_at:
+          type: string
+          format: date-time
+          nullable: true
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_overdue:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - destination
+      - expected_return_at
+      - id
+      - is_overdue
+      - reason
+      - requested_by
+      - responsible_person
+      - student
+    PassOutRequest:
+      type: object
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        reason:
+          $ref: '#/components/schemas/ReasonEnum'
+        destination:
+          type: string
+          maxLength: 200
+        responsible_person:
+          type: string
+          maxLength: 200
+        expected_return_at:
+          type: string
+          format: date-time
+        narrative:
+          type: string
+      required:
+      - destination
+      - expected_return_at
+      - reason
+      - responsible_person
+      - student_id
+    PassOutStatusEnum:
+      enum:
+      - requested
+      - approved
+      - denied
+      - departed
+      - returned
+      - cancelled
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `approved` - Approved
+        * `denied` - Denied
+        * `departed` - Departed
+        * `returned` - Returned
+        * `cancelled` - Cancelled
     Policy:
       type: object
       description: |-
@@ -2426,6 +3037,20 @@ components:
         * `off_site_duty` - Off-site school duty
         * `approved_leave` - Approved leave
         * `sick` - Sick
+        * `other` - Other
+    ReasonEnum:
+      enum:
+      - medical
+      - family
+      - weekend_home
+      - official
+      - other
+      type: string
+      description: |-
+        * `medical` - Medical
+        * `family` - Family
+        * `weekend_home` - Weekend at home
+        * `official` - Official school business
         * `other` - Other
     Record:
       type: object
@@ -2693,6 +3318,152 @@ components:
           maxLength: 2000
         step_up_token:
           type: string
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        purpose:
+          type: string
+        destination:
+          type: string
+          maxLength: 200
+        departs_at:
+          type: string
+          format: date-time
+        returns_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/TripStatusEnum'
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+        decision_note:
+          type: string
+        actual_departed_at:
+          type: string
+          format: date-time
+          nullable: true
+        actual_returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        participant_count:
+          type: integer
+          readOnly: true
+        supervisor_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - departs_at
+      - destination
+      - id
+      - participant_count
+      - returns_at
+      - supervisor_count
+      - title
+    TripCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        purpose:
+          type: string
+        destination:
+          type: string
+          maxLength: 200
+        departs_at:
+          type: string
+          format: date-time
+        returns_at:
+          type: string
+          format: date-time
+      required:
+      - departs_at
+      - destination
+      - returns_at
+      - title
+    TripDeparture:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        present_student_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TripReturn:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        returned_student_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TripRoster:
+      type: object
+      properties:
+        student_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        supervisor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        lead_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - student_ids
+      - supervisor_ids
+    TripStatusEnum:
+      enum:
+      - draft
+      - submitted
+      - approved
+      - rejected
+      - departed
+      - returned
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted for approval
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `departed` - Departed
+        * `returned` - Returned
+        * `cancelled` - Cancelled
     TypeEnum:
       enum:
       - attendance.check_in

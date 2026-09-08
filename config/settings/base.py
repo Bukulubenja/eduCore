@@ -57,6 +57,7 @@ LOCAL_APPS = [
     "educore.timetable",
     "educore.presence",
     "educore.delivery",
+    "educore.movement",
     "educore.students",
     "educore.assessment",
     "educore.comms",
@@ -68,6 +69,10 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # production.py inserts WhiteNoiseMiddleware here to serve collected static
+    # files (operator admin, Swagger UI). Left out of the base list so dev and
+    # test -- which never run `collectstatic` -- do not warn about a missing
+    # STATIC_ROOT on every request.
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -141,6 +146,18 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Default storages. Production swaps `staticfiles` for WhiteNoise's
+# hashed-manifest backend (config/settings/production.py); dev and test keep
+# the plain backend so nothing has to run `collectstatic` first.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # -- REST framework ----------------------------------------------------------
 
@@ -224,6 +241,18 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 300.0,
         "args": ("alert_staff_absences",),
         "options": {"queue": "notify", "expires": 280},
+    },
+    "remind-staff-checkins": {
+        "task": "educore.core.tasks.run_command",
+        "schedule": 300.0,
+        "args": ("remind_staff_checkins",),
+        "options": {"queue": "notify", "expires": 280},
+    },
+    "sweep-movement": {
+        "task": "educore.core.tasks.run_command",
+        "schedule": 600.0,
+        "args": ("sweep_movement",),
+        "options": {"queue": "notify", "expires": 560},
     },
 }
 

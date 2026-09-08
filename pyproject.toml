@@ -55,11 +55,12 @@ type = "layers"
 layers = [
     "educore.platform",
     "educore.insights",
-    "educore.assessment | educore.delivery | educore.presence",
+    "educore.assessment | educore.delivery | educore.presence | educore.movement",
     # `students` sits below the trio above, not alongside it. Who is in the
-    # school is foundational: scores, registers and report cards all reference
-    # a Student, while nothing in `students` needs to know that assessment
-    # exists. Modelling them as independent siblings was wrong.
+    # school is foundational: scores, registers, report cards and movement
+    # records all reference a Student, while nothing in `students` needs to
+    # know that assessment exists. Modelling them as independent siblings was
+    # wrong.
     "educore.students",
     "educore.timetable",
     "educore.academics",
@@ -74,6 +75,7 @@ source_modules = [
     "educore.timetable",
     "educore.presence",
     "educore.delivery",
+    "educore.movement",
     "educore.students",
     "educore.assessment",
     "educore.insights",
@@ -89,6 +91,7 @@ forbidden_modules = [
     "educore.timetable",
     "educore.presence",
     "educore.delivery",
+    "educore.movement",
     "educore.students",
     "educore.assessment",
     "educore.comms",

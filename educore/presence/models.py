@@ -100,6 +100,10 @@ class AttendancePolicy(TenantOwnedModel):
     day_ends_at = models.TimeField(default="17:00")
     late_grace_minutes = models.PositiveSmallIntegerField(default=15)
     early_checkin_minutes = models.PositiveSmallIntegerField(default=90)
+    # How long before the duty start a staff member is first nudged to check
+    # in (SSOMS §6, "check-in opens"). The reminder ladder walks
+    # opening_soon -> due -> late; escalation to leadership is a separate job.
+    checkin_reminder_lead_minutes = models.PositiveSmallIntegerField(default=45)
 
     max_clock_skew_seconds = models.PositiveIntegerField(default=300)
     qr_token_ttl_seconds = models.PositiveIntegerField(default=30)

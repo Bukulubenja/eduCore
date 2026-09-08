@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "DJANGO_SETTINGS_MODULE=config.settings.production python manage.py collectstatic --noinput"
+  },
+  "deploy": {
+    "startCommand": "DJANGO_SETTINGS_MODULE=config.settings.production sh -c 'python manage.py migrate --noinput && exec gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 60'",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
+}

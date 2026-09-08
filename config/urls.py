@@ -18,6 +18,7 @@ api_v1 = [
     path("me", core_views.MeView.as_view(), name="me"),
     path("", include("educore.presence.urls")),
     path("", include("educore.delivery.urls")),
+    path("", include("educore.movement.urls")),
     path("", include("educore.students.urls")),
     path("", include("educore.assessment.urls")),
     path("", include("educore.comms.urls")),
