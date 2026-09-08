@@ -11,8 +11,22 @@ from .base import *
 from .base import DATABASES, env
 
 DEBUG = False
-SECRET_KEY = env("SECRET_KEY")           # No default: absent means no boot.
-ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+
+
+def _required(*names: str):
+    """First set value among `names`, or raise. Accepts either the bare name
+    (`SECRET_KEY`) or a host that prefixes everything with `DJANGO_`."""
+    for name in names:
+        value = env(name, default="")
+        if value:
+            return value
+    raise ImproperlyConfigured(f"{names[0]} must be set in production.")
+
+
+SECRET_KEY = _required("SECRET_KEY", "DJANGO_SECRET_KEY")
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS", default=env.list("DJANGO_ALLOWED_HOSTS", default=[])
+)
 
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured("ALLOWED_HOSTS must be set in production.")
@@ -39,7 +53,10 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[]),
+)
 
 # -- Static files ----------------------------------------------------------
 
@@ -59,7 +76,11 @@ STORAGES["staticfiles"] = {
 DATABASES["default"]["CONN_MAX_AGE"] = 0        # PgBouncer owns pooling.
 DATABASES["default"].setdefault("OPTIONS", {})
 DATABASES["default"]["OPTIONS"].update({
-    "sslmode": env("PGSSLMODE", default="require"),
+    # `prefer`: use TLS when the server offers it, connect anyway when it does
+    # not. Railway's managed Postgres is reached over its private network,
+    # which does not present a TLS endpoint; a hosted PG on the public internet
+    # should set PGSSLMODE=require explicitly.
+    "sslmode": env("PGSSLMODE", default="prefer"),
     # Bounds a runaway query so one tenant cannot degrade the rest (ADR-0001,
     # accepted cost: noisy neighbours).
     "options": "-c statement_timeout=30000",

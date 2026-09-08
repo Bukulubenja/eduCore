@@ -1,0 +1,11 @@
+# Uploaded to the `web` (Django) service. Everything git already ignores is
+# skipped too; this list is the extra things that have no place in the
+# backend image.
+.claude/
+*.pdf
+console/
+docs/
+tests/
+.github/
+.import_linter_cache/
+htmlcov/
