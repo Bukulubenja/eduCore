@@ -41,6 +41,19 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
+# -- Static files ----------------------------------------------------------
+
+# WhiteNoise serves the collected static files (operator admin, Swagger UI)
+# straight from the app process -- no separate CDN at this scale. Directly
+# after SecurityMiddleware, as it requires. `collectstatic` runs in the
+# Railway build step (railway.json), and the storage backend below makes the
+# result hashed, compressed and far-future-cacheable.
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+STORAGES["staticfiles"] = {
+    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+}
+
 # -- Database ----------------------------------------------------------------
 
 DATABASES["default"]["CONN_MAX_AGE"] = 0        # PgBouncer owns pooling.

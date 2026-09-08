@@ -12,3 +12,9 @@ PyJWT==2.13.0
 PyOTP==2.10.0
 reportlab==5.0.0
 cryptography==50.0.0
+
+# Serving. gunicorn is the WSGI server in production; whitenoise serves the
+# collected static files (operator admin, Swagger UI) without a separate CDN
+# at this scale. Neither is imported by application code.
+gunicorn==23.0.0
+whitenoise==6.11.0

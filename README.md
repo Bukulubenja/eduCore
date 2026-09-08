@@ -86,6 +86,35 @@ Without PostgreSQL the project falls back to SQLite and **isolation layer 3
 (row-level security) is not exercised**. `pytest` reports this in its skip
 reasons; do not read a green SQLite run as proof of tenant isolation.
 
+## Deploying (Railway)
+
+`railway.json` pins the build (`collectstatic`) and start
+(`migrate` then `gunicorn config.wsgi`) commands; the Nixpacks builder installs
+everything in `requirements.txt`. WhiteNoise serves the collected static files
+from the app process.
+
+The `web` service needs these environment variables (the code reads **bare
+names** — `django-environ` with no prefix):
+
+| Variable | Value |
+|---|---|
+| `DJANGO_SETTINGS_MODULE` | `config.settings.production` |
+| `SECRET_KEY` | a 50+ char random string |
+| `FIELD_ENCRYPTION_KEY` | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
+| `DATABASE_URL` | provided by the Railway Postgres plugin |
+| `ALLOWED_HOSTS` | `web-production-xxxx.up.railway.app,app.metocore.dev` |
+| `CSRF_TRUSTED_ORIGINS` | `https://web-production-xxxx.up.railway.app,https://app.metocore.dev` |
+| `REDIS_URL` | Railway Redis plugin, if the Celery worker/beat run as their own services |
+| `CONSOLE_BASE_URL` | the deployed console origin (only used to build invite-email links) |
+| `SENTRY_DSN` | optional |
+
+`config/settings/production.py` refuses to boot if `SECRET_KEY` or
+`ALLOWED_HOSTS` is missing, or if `DATABASE_URL` is not PostgreSQL — a
+misconfigured process fails fast rather than serving with isolation disabled.
+
+The first deploy runs the full migration set, including the row-level-security
+policies, against an empty database.
+
 ## Checks
 
 ```bash
