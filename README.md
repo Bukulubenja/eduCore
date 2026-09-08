@@ -57,11 +57,14 @@ Configured in `CELERY_BEAT_SCHEDULE` and runnable by hand:
 |---|---|---|
 | `relay_outbox` | every minute | Events queue forever; nobody is ever notified |
 | `roll_timetable` | every 5 minutes | No lesson is ever recorded as missed |
+| `alert_staff_absences` | every 5 minutes | A staff no-show never reaches the deputy |
+| `remind_staff_checkins` | every 5 minutes | Staff get no nudge before they are marked late |
+| `sweep_movement` | every 10 minutes | A boarder or trip overdue back on campus is never flagged |
 | `verify_audit_chains` | nightly | Tampering goes undetected |
 | `estate_report` | nightly | Billing has no usage snapshot; a school that stopped syncing goes unnoticed |
 
-Each fails silently in a different way, which is why all three are scheduled
-rather than left to a runbook.
+Each fails silently in a different way, which is why they are scheduled rather
+than left to a runbook.
 
 ## Running it
 
@@ -134,6 +137,7 @@ educore/
   timetable/     period grids, scheduled lessons, lesson instances
   presence/      staff attendance, signals, confidence
   delivery/      lesson sessions, coverage
+  movement/      boarding pass-outs, trips, off-campus tracking
   students/      students, guardians, registers, gate events
   assessment/    assessments, scores, moderation, report cards
   comms/         announcements, threads, deliveries

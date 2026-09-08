@@ -57,6 +57,7 @@ LOCAL_APPS = [
     "educore.timetable",
     "educore.presence",
     "educore.delivery",
+    "educore.movement",
     "educore.students",
     "educore.assessment",
     "educore.comms",
@@ -224,6 +225,18 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 300.0,
         "args": ("alert_staff_absences",),
         "options": {"queue": "notify", "expires": 280},
+    },
+    "remind-staff-checkins": {
+        "task": "educore.core.tasks.run_command",
+        "schedule": 300.0,
+        "args": ("remind_staff_checkins",),
+        "options": {"queue": "notify", "expires": 280},
+    },
+    "sweep-movement": {
+        "task": "educore.core.tasks.run_command",
+        "schedule": 600.0,
+        "args": ("sweep_movement",),
+        "options": {"queue": "notify", "expires": 560},
     },
 }
 

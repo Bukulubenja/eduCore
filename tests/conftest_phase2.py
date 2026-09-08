@@ -185,6 +185,33 @@ def students(school_a, class_group, term):
 
 
 @pytest.fixture
+def boarder(school_a, class_group, term, make_membership):
+    """A boarding student with one verified, opted-in guardian.
+
+    Returns (student, guardian_membership) -- the pair every movement
+    notification test needs.
+    """
+    from educore.students.models import GuardianLink
+    from educore.students.services import enrol
+
+    guardian_member = make_membership(school_a, email="boarder-parent@example.com",
+                                      name="Boarder Parent")
+    with TenantContext.scope(school_a):
+        student = Student.objects.create(
+            school_id=school_a.id, admission_number="BRD001",
+            full_name="Boarder One", residency=Student.Residency.BOARDING,
+            scan_code="SCANBRD001",
+        )
+        enrol(student=student, class_group=class_group, term=term)
+        GuardianLink.objects.create(
+            school_id=school_a.id, student=student, membership=guardian_member,
+            relationship=GuardianLink.Relationship.MOTHER,
+            is_primary_contact=True, verified=True, receives_notifications=True,
+        )
+    return student, guardian_member
+
+
+@pytest.fixture
 def next_monday():
     """A future Monday, so instances can be materialised ahead of today."""
     today = timezone.localdate()

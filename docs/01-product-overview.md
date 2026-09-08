@@ -19,6 +19,8 @@ Every downstream failure follows from that gap:
 | Marks disputes, altered scores | No immutable record of who changed what |
 | Parents uninformed until visitation day | Communication lives in ungoverned WhatsApp groups |
 | Departments underperform unnoticed | No comparable metrics across staff or subjects |
+| A boarder leaves campus, nobody can say who signed them out | Pass-outs are a paper chit, if that |
+| Trip lists are stale, hand-typed, unapproved | The roster is not connected to the student record |
 
 ## Product thesis
 
@@ -86,9 +88,13 @@ link.
 - Academic structure: years, terms, levels, class groups, subjects, courses
 - Timetable authoring and versioning
 - Staff attendance with layered verification and exception handling
+- Staff check-in reminder ladder (before the leadership escalation)
 - Lesson delivery verification and substitution handling
 - Curriculum coverage and pace tracking
 - Student attendance (per-lesson and gate/day-scholar)
+- Student movement: boarding pass-outs and supervised trips, with roster
+  approval, guardian notification, and overdue-return alerts
+  (see [doc 08](08-student-movement.md), [ADR-0007](adr/0007-student-movement.md))
 - Assessment lifecycle through to released report cards
 - Announcements and notifications (push, SMS fallback, email)
 - Dashboards for director, head, DOS, HOD
@@ -103,7 +109,14 @@ Deferred deliberately. Each has a real cost and none is load-bearing for the the
 - Library, hostel, transport, inventory
 - Learning content delivery / LMS (assignments yes, courseware no)
 - Face recognition and liveness (see [ADR-0004](adr/0004-biometrics-opt-in.md))
-- Predictive AI and machine learning features
+- Predictive AI, anomaly detection, and machine-learning features. The founding
+  concept document (`SSOMS_Professional_System_Documentation_v2.pdf`) proposes
+  these as a later phase; [ADR-0007](adr/0007-student-movement.md) records the
+  decision to keep declining them until [doc 07](07-delivery-plan.md)'s
+  two-years-of-clean-data bar is met.
+- Visitor management, transport / bus tracking, emergency roll-call — also from
+  the concept document's future list; out for the same reason as library and
+  hostel.
 - Real-time chat (announcements and threads only — chat is a moderation liability)
 - Public parent-facing web portal (mobile app first)
 

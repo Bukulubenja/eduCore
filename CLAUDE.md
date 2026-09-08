@@ -10,7 +10,7 @@ Design is authoritative in [`docs/`](docs/README.md) — read it before making
 architectural changes, especially [ADR-0001 tenancy](docs/adr/0001-tenancy-model.md)
 and [ADR-0005 modular monolith](docs/adr/0005-modular-monolith.md).
 
-Module layering (`platform → insights → {assessment,delivery,presence} →
+Module layering (`platform → insights → {assessment,delivery,presence,movement} →
 students → timetable → academics → core`) is enforced by `lint-imports` in CI.
 Never import sideways or upward between `educore/<app>` packages — go through
 service functions or the outbox instead.
@@ -22,7 +22,8 @@ service functions or the outbox instead.
 - `django-security` — auth, CSRF, SQLi/XSS prevention, secure deploy config
 - `django-tdd` — pytest-django, factory_boy, TDD workflow
 - `django-celery` — Celery task/beat patterns (this repo has `CELERY_BEAT_SCHEDULE`
-  jobs: `relay_outbox`, `roll_timetable`, `verify_audit_chains`, `estate_report`)
+  jobs: `relay_outbox`, `roll_timetable`, `verify_audit_chains`, `estate_report`,
+  `alert_staff_absences`, `remind_staff_checkins`, `sweep_movement`)
 - `django-verification` — pre-merge check: migrations, lint, tests+coverage,
   security scan (mirrors the `## Checks` section in README.md)
 

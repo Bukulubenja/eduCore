@@ -101,6 +101,31 @@ def test_a_quiet_day_reports_zeroes_not_errors(school_a, teacher):
 
     assert snapshot["lessons"]["scheduled"] == 0
     assert snapshot["staff"]["checked_in"] == 0
+    assert snapshot["movement"]["students_off_campus"] == 0
+
+
+def test_today_counts_students_off_campus_and_overdue(school_a, boarder, teacher,
+                                                      make_membership, grant_role):
+    from educore.movement import services as movement
+
+    student, _ = boarder
+    bursar = make_membership(school_a, email="b@example.com", name="Bursar")
+    grant_role(bursar, "bursar", "Bursar")
+
+    with TenantContext.scope(school_a):
+        pass_out = movement.request_pass_out(
+            student=student, requested_by=teacher, reason="medical",
+            destination="Clinic", responsible_person="Parent",
+            expected_return_at=timezone.now() - timedelta(hours=1),
+        )
+        movement.decide_pass_out(pass_out=pass_out, decided_by=bursar,
+                                 approved=True)
+        movement.record_departure(pass_out=pass_out)
+
+        snapshot = services.today()
+
+    assert snapshot["movement"]["students_off_campus"] == 1
+    assert snapshot["movement"]["overdue_returns"] == 1
 
 
 def test_a_teacher_who_never_checked_out_is_counted_separately(school_a,

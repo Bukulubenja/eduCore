@@ -563,3 +563,126 @@ def raise_absence_alerts(*, date=None, now=None) -> int:
         },
     )
     return len(absent)
+
+
+# -- Check-in reminder ladder ------------------------------------------------
+#
+# SSOMS §6. `alert_staff_absences` above is the *escalation* half -- it tells
+# leadership about a no-show once the day's grace window is spent. This is the
+# other half: a timed nudge to the teacher themselves, before it gets that
+# far. It walks three stages and then stops, handing off to the escalation:
+#
+#   opening_soon  [day_start - lead,           day_start)
+#   due           [day_start,                  day_start + late_grace)
+#   late          [day_start + late_grace,     day_start + late_grace + escalation grace)
+#
+# Nothing is stored: the stage is recomputed from the roster, the policy and
+# the day's events every run, and `comms` dedupes on (member, date, stage) so
+# each nudge fires at most once.
+
+_REMINDER_STAGES = ("opening_soon", "due", "late")
+
+
+def _duty_start(policy, membership, date):
+    """The member's duty start for `date`: their DutySchedule, else the policy.
+
+    Returns ``None`` when the member has DutySchedules but none for this
+    weekday -- they are simply not on duty today.
+    """
+    from .models import DutySchedule
+
+    schedules = list(DutySchedule.objects.filter(membership=membership))
+    if not schedules:
+        return policy.day_starts_at
+    for schedule in schedules:
+        if schedule.weekday == date.weekday():
+            return schedule.starts_at
+    return None
+
+
+def _reminder_stage(policy, membership, date, now) -> str | None:
+    from datetime import datetime
+
+    starts_at = _duty_start(policy, membership, date)
+    if starts_at is None:
+        return None
+
+    tz = timezone.get_current_timezone()
+    day_start = datetime.combine(date, starts_at, tzinfo=tz)
+    lead = timedelta(minutes=policy.checkin_reminder_lead_minutes)
+    grace = timedelta(minutes=policy.late_grace_minutes)
+    escalation_grace = timedelta(
+        minutes=policy.late_grace_minutes + _staff_absence_grace_minutes()
+    )
+
+    if day_start - lead <= now < day_start:
+        return "opening_soon"
+    if day_start <= now < day_start + grace:
+        return "due"
+    if day_start + grace <= now < day_start + escalation_grace:
+        return "late"
+    return None
+
+
+def _staff_absence_grace_minutes() -> int:
+    from django.conf import settings
+    return getattr(settings, "STAFF_ABSENCE_ALERT_GRACE_MINUTES", 120)
+
+
+def detect_checkin_reminders(*, date=None, now=None) -> list[tuple[Membership, str]]:
+    """Staff who should be nudged to check in, with the stage of the nudge.
+
+    Skips anyone already checked in, on approved leave for the day, not on
+    duty today, or when the school itself is closed.
+    """
+    school_id = TenantContext.require()
+    now = now or timezone.now()
+    date = date or timezone.localtime(now).date()
+
+    if _is_non_working_day(date):
+        return []
+
+    policy = active_policy(school_id)
+
+    checked_in = set(
+        AttendanceEvent.objects.filter(
+            captured_at__date=date, kind=AttendanceEvent.Kind.CHECK_IN,
+        ).values_list("membership_id", flat=True).distinct()
+    )
+    on_leave = set(
+        AttendanceRecord.objects.filter(
+            date=date, status=AttendanceStatus.ON_LEAVE,
+        ).values_list("membership_id", flat=True)
+    )
+
+    expected = (
+        Membership.objects.filter(status=Membership.Status.ACTIVE)
+        .exclude(role_assignments__role__code__in=_NON_STAFF_ROLE_CODES)
+        .distinct()
+    )
+
+    due: list[tuple[Membership, str]] = []
+    for member in expected:
+        if member.pk in checked_in or member.pk in on_leave:
+            continue
+        stage = _reminder_stage(policy, member, date, now)
+        if stage is not None:
+            due.append((member, stage))
+    return due
+
+
+def raise_checkin_reminders(*, date=None, now=None) -> int:
+    """Emit one reminder event per member currently in a reminder window."""
+    school_id = TenantContext.require()
+    now = now or timezone.now()
+    date = date or timezone.localtime(now).date()
+
+    reminders = detect_checkin_reminders(date=date, now=now)
+    for member, stage in reminders:
+        OutboxMessage.objects.create(
+            school_id=school_id,
+            topic="presence.checkin.reminder_due",
+            payload={"membership_id": str(member.pk), "date": str(date),
+                     "stage": stage},
+        )
+    return len(reminders)

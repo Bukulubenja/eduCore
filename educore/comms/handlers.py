@@ -191,6 +191,239 @@ def notify_guardians_of_results(payload, *, message=None):
         )
 
 
+# -- Student movement (doc 08) ---------------------------------------------
+#
+# Guardian recipients arrive in the payload already filtered for verification
+# and opt-out by `movement.services` -- deciding who may be told about a child
+# is that module's business, not this one's. Bodies never carry a destination
+# or a reason: a lock-screen preview is not a private channel.
+
+
+def _notify_guardians(payload, *, topic, title, body, importance, dedupe_prefix):
+    for entry in payload.get("recipients", []):
+        recipient = _membership(entry["membership_id"])
+        if recipient is None:
+            continue
+        notify(
+            recipient=recipient, topic=topic, title=title, body=body,
+            payload={"student_id": entry["student_id"], **_ref_ids(payload)},
+            importance=importance,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"{dedupe_prefix}:{entry['student_id']}",
+        )
+
+
+def _ref_ids(payload) -> dict:
+    return {k: payload[k] for k in ("pass_out_id", "trip_id") if k in payload}
+
+
+@subscribe("movement.pass_out.requested")
+def alert_leadership_to_pass_out_request(payload, *, message=None):
+    for recipient in _leadership(message):
+        notify(
+            recipient=recipient, topic="movement.pass_out.requested",
+            title="A pass-out is waiting for approval",
+            body="A boarder's pass-out request needs a decision.",
+            payload={"pass_out_id": payload["pass_out_id"]},
+            importance=Notification.Importance.IMPORTANT,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"passout-requested:{payload['pass_out_id']}",
+        )
+
+
+@subscribe("movement.pass_out.approved")
+def notify_pass_out_approved(payload, *, message=None):
+    requester = _membership(payload.get("requester_membership_id"))
+    if requester is not None:
+        notify(
+            recipient=requester, topic="movement.pass_out.approved",
+            title="Pass-out approved",
+            body="The pass-out you requested has been approved.",
+            payload={"pass_out_id": payload["pass_out_id"]},
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"passout-approved-requester:{payload['pass_out_id']}",
+        )
+    _notify_guardians(
+        payload, topic="movement.pass_out.approved",
+        title="Your child has an approved pass-out",
+        body="The school has approved a pass-out for your child. Sign in for details.",
+        importance=Notification.Importance.IMPORTANT,
+        dedupe_prefix=f"passout-approved:{payload['pass_out_id']}",
+    )
+
+
+@subscribe("movement.pass_out.denied")
+def notify_pass_out_denied(payload, *, message=None):
+    requester = _membership(payload.get("requester_membership_id"))
+    if requester is None:
+        return
+    notify(
+        recipient=requester, topic="movement.pass_out.denied",
+        title="Pass-out not approved",
+        body="The pass-out you requested was not approved.",
+        payload={"pass_out_id": payload["pass_out_id"]},
+        channels=[Channel.IN_APP, Channel.PUSH],
+        dedupe_key=f"passout-denied:{payload['pass_out_id']}",
+    )
+
+
+@subscribe("movement.pass_out.departed")
+def notify_pass_out_departed(payload, *, message=None):
+    _notify_guardians(
+        payload, topic="movement.pass_out.departed",
+        title="Your child has left campus",
+        body="Your child has signed out on an approved pass-out.",
+        importance=Notification.Importance.IMPORTANT,
+        dedupe_prefix=f"passout-departed:{payload['pass_out_id']}",
+    )
+
+
+@subscribe("movement.pass_out.returned")
+def notify_pass_out_returned(payload, *, message=None):
+    _notify_guardians(
+        payload, topic="movement.pass_out.returned",
+        title="Your child is back on campus",
+        body="Your child has signed back in from their pass-out.",
+        importance=Notification.Importance.ROUTINE,
+        dedupe_prefix=f"passout-returned:{payload['pass_out_id']}",
+    )
+
+
+@subscribe("movement.pass_out.overdue")
+def alert_pass_out_overdue(payload, *, message=None):
+    for recipient in _leadership(message):
+        notify(
+            recipient=recipient, topic="movement.pass_out.overdue",
+            title="A student is overdue back on campus",
+            body="A boarder on a pass-out has not returned by the expected time.",
+            payload={"pass_out_id": payload["pass_out_id"]},
+            importance=Notification.Importance.URGENT,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"passout-overdue:{payload['pass_out_id']}",
+        )
+    _notify_guardians(
+        payload, topic="movement.pass_out.overdue",
+        title="Your child is overdue back at school",
+        body="Your child was expected back from a pass-out and has not returned. "
+             "Please contact the school.",
+        importance=Notification.Importance.URGENT,
+        dedupe_prefix=f"passout-overdue:{payload['pass_out_id']}",
+    )
+
+
+@subscribe("movement.trip.submitted")
+def alert_leadership_to_trip_submission(payload, *, message=None):
+    for recipient in _leadership(message):
+        notify(
+            recipient=recipient, topic="movement.trip.submitted",
+            title="A trip is waiting for approval",
+            body=(f"\"{payload['title']}\" has been submitted with "
+                  f"{payload['participant_count']} student(s)."),
+            payload={"trip_id": payload["trip_id"]},
+            importance=Notification.Importance.IMPORTANT,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"trip-submitted:{payload['trip_id']}",
+        )
+
+
+@subscribe("movement.trip.approved")
+def notify_trip_approved(payload, *, message=None):
+    _notify_guardians(
+        payload, topic="movement.trip.approved",
+        title="Your child is on an approved trip",
+        body=(f"Your child is included in \"{payload['title']}\". "
+              "Sign in for the details."),
+        importance=Notification.Importance.IMPORTANT,
+        dedupe_prefix=f"trip-approved:{payload['trip_id']}",
+    )
+
+
+@subscribe("movement.trip.rejected")
+def notify_trip_rejected(payload, *, message=None):
+    creator = _membership(payload.get("creator_membership_id"))
+    if creator is None:
+        return
+    notify(
+        recipient=creator, topic="movement.trip.rejected",
+        title="Trip not approved",
+        body="The trip you submitted was not approved.",
+        payload={"trip_id": payload["trip_id"]},
+        channels=[Channel.IN_APP, Channel.PUSH],
+        dedupe_key=f"trip-rejected:{payload['trip_id']}",
+    )
+
+
+@subscribe("movement.trip.departed")
+def notify_trip_departed(payload, *, message=None):
+    _notify_guardians(
+        payload, topic="movement.trip.departed",
+        title="Your child has left on a trip",
+        body=f"\"{payload['title']}\" has departed with your child.",
+        importance=Notification.Importance.IMPORTANT,
+        dedupe_prefix=f"trip-departed:{payload['trip_id']}",
+    )
+
+
+@subscribe("movement.trip.returned")
+def notify_trip_returned(payload, *, message=None):
+    _notify_guardians(
+        payload, topic="movement.trip.returned",
+        title="Your child is back from the trip",
+        body=f"\"{payload['title']}\" has returned to school.",
+        importance=Notification.Importance.ROUTINE,
+        dedupe_prefix=f"trip-returned:{payload['trip_id']}",
+    )
+
+
+@subscribe("movement.trip.overdue")
+def alert_trip_overdue(payload, *, message=None):
+    for recipient in _leadership(message):
+        notify(
+            recipient=recipient, topic="movement.trip.overdue",
+            title="A trip is overdue back at school",
+            body=(f"\"{payload['title']}\" was expected back and has not "
+                  "been marked returned."),
+            payload={"trip_id": payload["trip_id"]},
+            importance=Notification.Importance.URGENT,
+            channels=[Channel.IN_APP, Channel.PUSH],
+            dedupe_key=f"trip-overdue:{payload['trip_id']}",
+        )
+
+
+# -- Staff check-in reminders (doc 04, SSOMS §6) --------------------------
+
+
+@subscribe("presence.checkin.reminder_due")
+def remind_teacher_to_check_in(payload, *, message=None):
+    """A timed nudge to the member of staff themselves -- never leadership.
+
+    Escalation to leadership is a separate event
+    (`presence.staff_absence.detected`); this ladder is only about helping the
+    teacher not forget. One notification per stage per person per day.
+    """
+    stage = payload["stage"]
+    recipient = _membership(payload["membership_id"])
+    if recipient is None:
+        return
+
+    bodies = {
+        "opening_soon": "Your check-in window opens soon.",
+        "due": "Please check in to confirm your presence at school.",
+        "late": "You have not checked in yet and are now marked late.",
+    }
+    notify(
+        recipient=recipient,
+        topic="presence.checkin.reminder_due",
+        title="Check-in reminder",
+        body=bodies.get(stage, "Please check in."),
+        payload={"date": payload["date"], "stage": stage},
+        importance=(Notification.Importance.IMPORTANT if stage == "late"
+                    else Notification.Importance.ROUTINE),
+        channels=[Channel.IN_APP, Channel.PUSH],
+        dedupe_key=f"checkin-reminder:{payload['membership_id']}:{payload['date']}:{stage}",
+    )
+
+
 LEADERSHIP_ROLES = {"director", "head_teacher", "deputy", "dos"}
 
 

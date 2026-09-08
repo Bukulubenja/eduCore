@@ -19,6 +19,7 @@ never leave the two silently diverged.
 | 06a | [DPIA](06a-dpia.md) | Data protection impact assessment: inventory, lawful basis, risk, gaps |
 | 06b | [Restore Drills](06b-restore-drills.md) | Backup/restore runbook and the current gap against doc 06's claims |
 | 07 | [Delivery Plan](07-delivery-plan.md) | Phases with exit criteria, team shape, risks |
+| 08 | [Student Movement](08-student-movement.md) | Boarding pass-outs, trips, the check-in reminder ladder |
 | — | [Partitioning Plan](partitioning-plan.md) | Phase 4 hot-table partitioning: design, blocked-on, rollout steps |
 
 ## Architecture Decision Records
@@ -34,6 +35,7 @@ supersedes the old one — do not edit history.
 | [0004](adr/0004-biometrics-opt-in.md) | Biometrics opt-in, template-only, never sole gate | Accepted |
 | [0005](adr/0005-modular-monolith.md) | Modular monolith over microservices | Accepted |
 | [0006](adr/0006-api-style.md) | Versioned REST + OpenAPI 3.1 | Accepted |
+| [0007](adr/0007-student-movement.md) | Student movement (pass-outs, trips) is a first-class domain | Accepted |
 
 ## Glossary (ubiquitous language)
 

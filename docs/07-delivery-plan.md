@@ -36,7 +36,8 @@ The first thing a school actually pays for.
   service, geofence, device binding, appeal and review queue
 - Mobile app: check-in/out, offline queue, sync endpoint, own attendance history
 - Web: attendance dashboard, review queue, policy configuration
-- Notifications: staff absence alert to the deputy
+- Notifications: staff absence alert to the deputy, and the teacher-facing
+  check-in reminder ladder (opening-soon → due → late) that precedes it
 
 **Exit:** one pilot school runs staff attendance on eduCore for four consecutive
 weeks with paper stopped; provisional rate under 10%; appeals upheld under 2%.
@@ -70,6 +71,25 @@ scheduling intervention before end of term — not because we asked them to.
 
 **Exit:** a full term's report cards produced end-to-end in eduCore and issued to
 parents, with no parallel spreadsheet anywhere in the process.
+
+## Phase 3b — Student Movement (4 weeks)
+
+The concept document's differentiator (see [doc 08](08-student-movement.md),
+[ADR-0007](adr/0007-student-movement.md)). Small because it reuses the outbox,
+the guardian model, and the enrolment roster that Phases 1–3 already built.
+
+- `movement`: boarding pass-out workflow (request → bursar approval → departure
+  → return), trips (roster from the student database → leadership approval →
+  departure/return attendance), overdue-return sweep
+- `comms`: guardian and leadership notifications for every movement event
+- Web: movement console — pass-outs awaiting decision, students currently off
+  campus, trips awaiting approval
+- `insights.today()`: students off campus and overdue returns on the director's
+  dashboard
+
+**Exit:** the pilot boarding school runs pass-outs and one real trip through
+eduCore, with the paper chit stopped and a guardian confirming they were
+notified.
 
 ## Phase 4 — Scale & Operate (ongoing)
 
